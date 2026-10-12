@@ -2,6 +2,27 @@
   command = "npm run build"
   publish = "dist"
 
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/.netlify/functions/sitemap"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/sitemap"
+  to = "/.netlify/functions/sitemap"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/sitemap_index.xml"
+  to = "/.netlify/functions/sitemap"
+  status = 301
+  force = true
+
 [[headers]]
   for = "/sitemap.xml"
   [headers.values]
