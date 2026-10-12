@@ -260,16 +260,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       const res = await saveCategoryToFirestore(cat, isNew);
       if (res.success) {
-        if (res.status === 'queued_offline') {
-          showToast('تم حفظ القسم محلياً وسيتم تأكيده في Firebase فور توفر الإنترنت.', 'info');
-        } else {
-          showToast(isNew ? 'تمت إضافة القسم ومزامنته مباشرة في Firebase' : 'تم تحديث القسم في Firebase', 'success');
-        }
+        showToast(isNew ? 'تمت إضافة القسم وحفظه في Firestore بنجاح ✓' : 'تم تحديث القسم في Firestore بنجاح ✓', 'success');
       } else {
         showToast(`تعذر حفظ القسم: ${res.error}`, 'error');
       }
-    } catch (err) {
-      showToast('حدث خطأ أثناء حفظ القسم.', 'error');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`حدث خطأ أثناء حفظ القسم: ${msg}`, 'error');
     }
   };
 
@@ -277,16 +274,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       const res = await deleteCategoryFromFirestore(id, name);
       if (res.success) {
-        if (res.status === 'queued_offline') {
-          showToast('تم تسجيل حذف القسم محلياً وسيتم تأكيده في Firebase عند الاتصال.', 'info');
-        } else {
-          showToast('تم حذف القسم ومزامنته بنجاح مع Firebase', 'success');
-        }
+        showToast('تم حذف القسم من Firestore بنجاح ✓', 'success');
       } else {
         showToast(`تعذر حذف القسم: ${res.error}`, 'error');
       }
-    } catch (err) {
-      showToast('حدث خطأ أثناء حذف القسم.', 'error');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`حدث خطأ أثناء حذف القسم: ${msg}`, 'error');
     }
   };
 
@@ -309,16 +303,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       const res = await saveSiteSettingsToFirestore(newSettings);
       if (res.success) {
-        if (res.status === 'queued_offline') {
-          showToast('تم حفظ الإعدادات محلياً بانتظار الاتصال بـ Firebase.', 'info');
-        } else {
-          showToast('تم حفظ إعدادات الموقع وتأكيدها مباشرة في Firebase', 'success');
-        }
+        showToast('تم حفظ إعدادات الموقع وتأكيدها في Firestore بنجاح ✓', 'success');
       } else {
         showToast(`تعذر حفظ الإعدادات: ${res.error}`, 'error');
       }
-    } catch (err) {
-      showToast('حدث خطأ أثناء حفظ الإعدادات.', 'error');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`حدث خطأ أثناء حفظ الإعدادات: ${msg}`, 'error');
     }
   };
 
@@ -327,12 +318,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       const res = await saveSiteSettingsToFirestore({ ...siteSettings });
       if (res.success) {
-        showToast('تم حفظ معايير محركات البحث (SEO) وتأكيدها في Firebase', 'success');
+        showToast('تم حفظ معايير محركات البحث (SEO) في Firestore بنجاح ✓', 'success');
       } else {
         showToast(`تعذر حفظ الإعدادات: ${res.error}`, 'error');
       }
-    } catch (err) {
-      showToast('حدث خطأ أثناء حفظ معايير محركات البحث.', 'error');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`حدث خطأ أثناء حفظ معايير محركات البحث: ${msg}`, 'error');
     }
   };
 
@@ -341,16 +333,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       const res = await saveStaticPageToFirestore(page, isNew);
       if (res.success) {
-        if (res.status === 'queued_offline') {
-          showToast('تم حفظ الصفحة وتحديث الموقع بنجاح.', 'info');
-        } else {
-          showToast(isNew ? 'تمت إضافة صفحة الموقع وتحديثها بنجاح' : 'تم تحديث الصفحة وتأكيد التغييرات بنجاح', 'success');
-        }
+        showToast(isNew ? 'تمت إضافة صفحة الموقع وحفظها في Firestore بنجاح ✓' : 'تم تحديث الصفحة وتأكيد التغييرات بنجاح ✓', 'success');
       } else {
         showToast(`تعذر حفظ الصفحة: ${res.error || 'تحقق من صحة المدخلات'}`, 'error');
       }
-    } catch (err) {
-      showToast('حدث خطأ أثناء حفظ الصفحة.', 'error');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`حدث خطأ أثناء حفظ الصفحة: ${msg}`, 'error');
     }
   };
 
@@ -358,12 +347,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     try {
       const res = await deleteStaticPageFromFirestore(id, title);
       if (res.success) {
-        showToast('تم حذف صفحة الموقع وتحديث الموقع بنجاح', 'success');
+        showToast('تم حذف صفحة الموقع بنجاح ✓', 'success');
       } else {
         showToast(`تعذر حذف الصفحة: ${res.error}`, 'error');
       }
-    } catch (err) {
-      showToast('حدث خطأ أثناء حذف الصفحة.', 'error');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      showToast(`حدث خطأ أثناء حذف الصفحة: ${msg}`, 'error');
     }
   };
 

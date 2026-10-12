@@ -888,12 +888,12 @@ export function subscribeToCategories(
 }
 
 /**
- * Save / Update Category as Admin with direct Firebase sync
+ * Save / Update Category as Admin with direct Firestore write
  */
 export async function saveCategoryToFirestore(
   cat: Partial<AdminCategory>,
   isNew: boolean
-): Promise<{ success: boolean; status?: 'confirmed' | 'queued_offline'; error?: string }> {
+): Promise<{ success: boolean; status?: 'published'; error?: string }> {
   try {
     const catId = cat.id?.trim() || cat.slug?.trim() || `cat-${Date.now()}`;
     const dataToSave = {
@@ -904,51 +904,37 @@ export async function saveCategoryToFirestore(
       order: cat.order || 1,
       isActive: cat.isActive !== false,
       showInNav: cat.showInNav !== false,
+      updatedAt: serverTimestamp(),
       ...(isNew ? { createdAt: serverTimestamp() } : {}),
     };
 
-    const syncRes = await executeDirectSync({
-      collection: 'categories',
-      docId: catId,
-      action: 'upsert',
-      data: dataToSave,
-      title: `${isNew ? 'إضافة قسم' : 'تعديل قسم'}: ${cat.name || catId}`,
-    });
+    const docRef = doc(db, 'categories', catId);
+    await setDoc(docRef, dataToSave, { merge: true });
 
     return {
-      success: syncRes.success,
-      status: syncRes.status,
-      error: syncRes.error,
+      success: true,
+      status: 'published',
     };
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorMsg = formatFirestoreErrorMessage(err, isNew ? 'إضافة قسم' : 'تعديل قسم');
     handleFirestoreError(err, isNew ? OperationType.CREATE : OperationType.UPDATE, 'categories');
     return { success: false, error: errorMsg };
   }
 }
 
 /**
- * Delete Category as Admin with direct Firebase sync
+ * Delete Category as Admin with direct Firestore write
  */
 export async function deleteCategoryFromFirestore(
   id: string,
   name?: string
-): Promise<{ success: boolean; status?: 'confirmed' | 'queued_offline'; error?: string }> {
+): Promise<{ success: boolean; error?: string }> {
   try {
-    const syncRes = await executeDirectSync({
-      collection: 'categories',
-      docId: id,
-      action: 'delete',
-      title: `حذف القسم: ${name || id}`,
-    });
-
-    return {
-      success: syncRes.success,
-      status: syncRes.status,
-      error: syncRes.error,
-    };
+    const docRef = doc(db, 'categories', id);
+    await deleteDoc(docRef);
+    return { success: true };
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorMsg = formatFirestoreErrorMessage(err, 'حذف القسم');
     handleFirestoreError(err, OperationType.DELETE, `categories/${id}`);
     return { success: false, error: errorMsg };
   }
@@ -1060,12 +1046,12 @@ export function subscribeToStaticPages(
 }
 
 /**
- * Save / Update Static Page as Admin with direct Firebase sync & persistent fallback
+ * Save / Update Static Page as Admin with direct Firestore write & local cache sync
  */
 export async function saveStaticPageToFirestore(
   page: Partial<StaticPageDetail>,
   isNew: boolean
-): Promise<{ success: boolean; status?: 'confirmed' | 'queued_offline'; error?: string; id?: string }> {
+): Promise<{ success: boolean; status?: 'published'; error?: string; id?: string }> {
   try {
     const rawId = (page.id || page.slug || '').trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
     const pageId = rawId || `page-${Date.now()}`;
@@ -1099,47 +1085,33 @@ export async function saveStaticPageToFirestore(
     savePersistedStaticPages(currentPages);
     notifyStaticPagesListeners(currentPages);
 
-    // 2. Sync to Firebase Firestore
-    try {
-      const syncRes = await executeDirectSync({
-        collection: 'staticPages',
-        docId: pageId,
-        action: 'upsert',
-        data: {
-          ...dataToSave,
-          updatedAt: serverTimestamp(),
-          ...(isNew ? { createdAt: serverTimestamp() } : {}),
-        },
-        title: `${isNew ? 'إضافة صفحة موقع' : 'تحديث صفحة موقع'}: ${page.title || pageId}`,
-      });
+    // 2. Direct write to Firestore
+    const docRef = doc(db, 'staticPages', pageId);
+    await setDoc(docRef, {
+      ...dataToSave,
+      updatedAt: serverTimestamp(),
+      ...(isNew ? { createdAt: serverTimestamp() } : {}),
+    }, { merge: true });
 
-      return {
-        success: true,
-        status: syncRes.status,
-        id: pageId,
-      };
-    } catch (syncErr) {
-      console.warn('Firestore remote sync queued for static page:', syncErr);
-      return {
-        success: true,
-        status: 'queued_offline',
-        id: pageId,
-      };
-    }
+    return {
+      success: true,
+      status: 'published',
+      id: pageId,
+    };
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorMsg = formatFirestoreErrorMessage(err, isNew ? 'إضافة صفحة موقع' : 'تحديث صفحة موقع');
     handleFirestoreError(err, isNew ? OperationType.CREATE : OperationType.UPDATE, 'staticPages');
-    return { success: true, status: 'queued_offline', error: errorMsg };
+    return { success: false, error: errorMsg, id: page.id };
   }
 }
 
 /**
- * Delete Static Page as Admin with direct Firebase sync & persistent fallback
+ * Delete Static Page as Admin with direct Firestore delete & local cache sync
  */
 export async function deleteStaticPageFromFirestore(
   id: string,
   title?: string
-): Promise<{ success: boolean; status?: 'confirmed' | 'queued_offline'; error?: string }> {
+): Promise<{ success: boolean; error?: string }> {
   try {
     // 1. Immediately remove from local durable storage & notify listeners
     const currentPages = getPersistedStaticPages();
@@ -1152,30 +1124,17 @@ export async function deleteStaticPageFromFirestore(
     savePersistedStaticPages(currentPages);
     notifyStaticPagesListeners(currentPages);
 
-    // 2. Sync to Firebase Firestore
-    try {
-      const syncRes = await executeDirectSync({
-        collection: 'staticPages',
-        docId: id,
-        action: 'delete',
-        title: `حذف صفحة الموقع: ${title || id}`,
-      });
+    // 2. Direct delete from Firestore
+    const docRef = doc(db, 'staticPages', id);
+    await deleteDoc(docRef);
 
-      return {
-        success: true,
-        status: syncRes.status,
-      };
-    } catch (syncErr) {
-      console.warn('Firestore remote delete queued for static page:', syncErr);
-      return {
-        success: true,
-        status: 'queued_offline',
-      };
-    }
+    return {
+      success: true,
+    };
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorMsg = formatFirestoreErrorMessage(err, 'حذف صفحة الموقع');
     handleFirestoreError(err, OperationType.DELETE, `staticPages/${id}`);
-    return { success: true, status: 'queued_offline', error: errorMsg };
+    return { success: false, error: errorMsg };
   }
 }
 
@@ -1307,27 +1266,21 @@ export function subscribeToSiteSettings(onUpdate: (settings: SiteSettings) => vo
 }
 
 /**
- * Save Site Settings as Admin with direct Firebase sync
+ * Save Site Settings as Admin with direct Firestore write
  */
 export async function saveSiteSettingsToFirestore(
   settings: Partial<SiteSettings>
-): Promise<{ success: boolean; status?: 'confirmed' | 'queued_offline'; error?: string }> {
+): Promise<{ success: boolean; status?: 'published'; error?: string }> {
   try {
-    const syncRes = await executeDirectSync({
-      collection: 'siteSettings',
-      docId: 'general',
-      action: 'upsert',
-      data: settings,
-      title: 'تعديل إعدادات الموقع والهوية الصحفية',
-    });
+    const docRef = doc(db, 'siteSettings', 'general');
+    await setDoc(docRef, { ...settings, updatedAt: serverTimestamp() }, { merge: true });
 
     return {
-      success: syncRes.success,
-      status: syncRes.status,
-      error: syncRes.error,
+      success: true,
+      status: 'published',
     };
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
+    const errorMsg = formatFirestoreErrorMessage(err, 'تعديل إعدادات الموقع');
     handleFirestoreError(err, OperationType.UPDATE, 'siteSettings/general');
     return { success: false, error: errorMsg };
   }
