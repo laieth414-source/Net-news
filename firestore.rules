@@ -1,0 +1,108 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // دوال التحقق الأمنية
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // التحقق من هوية المشرف المعتمد (laieth772@gmail.com):
+    // 1. تطابق البريد الإلكتروني المعتمد للمشرف (مطابقة مباشرة وصحيحة)
+    // 2. أو وجود سجل رسمي للمستخدم في مجموعة المشرفين (admins)
+    function isAuthorizedAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'laieth772@gmail.com' ||
+        request.auth.token.email.matches('(?i)laieth772@gmail[.]com') ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    // 1. مجموعة الأخبار والمقالات (articles)
+    // الزوار: القراءة فقط
+    // الإدارة: محصورة بالمشرف المعتمد (laieth772@gmail.com)
+    match /articles/{articleId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthorizedAdmin();
+    }
+
+    // 2. مجموعة الأخبار العاجلة (breakingNews)
+    // الزوار: القراءة فقط
+    // الإدارة: محصورة بالمشرف المعتمد
+    match /breakingNews/{newsId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthorizedAdmin();
+    }
+
+    // 3. مجموعة التصنيفات والأقسام (categories)
+    // الزوار: القراءة فقط
+    // الإدارة: محصورة بالمشرف المعتمد
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthorizedAdmin();
+    }
+
+    // 4. إعدادات الموقع العامة (siteSettings)
+    // الزوار: قراءة الإعدادات العامة
+    // الإدارة: محصورة بالمشرف المعتمد
+    match /siteSettings/{settingId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthorizedAdmin();
+    }
+
+    // 5. صفحات الموقع والسياسات (staticPages)
+    // الزوار: القراءة فقط
+    // الإدارة: محصورة بالمشرف المعتمد
+    match /staticPages/{pageId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthorizedAdmin();
+    }
+
+    // 6. مجموعة مشتركي النشرة البريدية (newsletterSubscribers)
+    // الزوار: يمكنهم فقط إنشاء اشتراك جديد ببريد إلكتروني صالح
+    // الزوار: ممنوعون قطعاً من قراءة عناوين البريد المسجلة
+    // الإدارة: المشرف المعتمد فقط يمكنه قراءة وإدارة قائمة المشتركين
+    match /newsletterSubscribers/{subscriberId} {
+      allow create: if request.resource.data.email is string &&
+                    request.resource.data.email.size() >= 5 &&
+                    request.resource.data.email.size() <= 200;
+      allow read, update, delete: if isAuthorizedAdmin();
+    }
+
+    // 7. مجموعة المشرفين المعتمدين (admins)
+    // القراءة: للمستخدمين المسجلين
+    // الكتابة: محصورة بالمشرف المعتمد
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAuthorizedAdmin();
+    }
+
+    // 8. سجل التدقيق الإداري (auditLogs)
+    // الإدارة: قراءة وتوثيق سجل العمليات من قبل المشرف المعتمد فقط
+    match /auditLogs/{logId} {
+      allow read, create: if isAuthorizedAdmin();
+      allow update, delete: if false;
+    }
+
+    // 9. أحداث وإحصائيات الزوار (analyticsEvents)
+    // الزوار: السماح بتسجيل مشاهدة صفحة حقيقية بحقول محددة
+    // الإدارة: محصورة بالمشرف المعتمد
+    match /analyticsEvents/{eventId} {
+      allow create: if request.resource.data.visitorId is string;
+      allow read, update, delete: if isAuthorizedAdmin();
+    }
+
+    // 10. الزوار النشطون حالياً (activeVisitors)
+    // نبضات التواجد اللحظي
+    match /activeVisitors/{visitorId} {
+      allow create, update: if true;
+      allow read, delete: if isAuthorizedAdmin();
+    }
+
+    // 11. القفل الافتراضي الشامل: حجب أي وصول غير معرّف صراحة
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

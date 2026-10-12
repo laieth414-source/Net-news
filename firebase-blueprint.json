@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "Article": {
+      "title": "Article",
+      "description": "Editorial news article item",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "maxLength": 300 },
+        "deck": { "type": "string", "maxLength": 600 },
+        "content": { "type": "array" },
+        "categoryId": { "type": "string", "maxLength": 50 },
+        "categoryName": { "type": "string", "maxLength": 100 },
+        "publishedAt": { "type": "string", "maxLength": 100 },
+        "timestamp": { "type": "string", "maxLength": 100 },
+        "source": { "type": "string", "maxLength": 150 },
+        "imageCaption": { "type": "string", "maxLength": 400 },
+        "readTime": { "type": "string", "maxLength": 50 },
+        "isLead": { "type": "boolean" },
+        "isSecondary": { "type": "boolean" },
+        "viewsCount": { "type": "string", "maxLength": 50 },
+        "tags": { "type": "array" },
+        "keyPoints": { "type": "array" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["title", "deck", "categoryId", "categoryName", "source"]
+    },
+    "BreakingNews": {
+      "title": "BreakingNews",
+      "description": "Live breaking news ticker item",
+      "type": "object",
+      "properties": {
+        "text": { "type": "string", "maxLength": 400 },
+        "time": { "type": "string", "maxLength": 50 },
+        "category": { "type": "string", "maxLength": 100 },
+        "articleId": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["text", "category"]
+    },
+    "NewsletterSubscriber": {
+      "title": "NewsletterSubscriber",
+      "description": "Visitor email subscription to daily briefing",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "format": "email", "maxLength": 200 },
+        "subscribedAt": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["email"]
+    }
+  },
+  "firestore": {
+    "/articles/{articleId}": {
+      "schema": "Article",
+      "description": "Collection of editorial articles"
+    },
+    "/breakingNews/{newsId}": {
+      "schema": "BreakingNews",
+      "description": "Live breaking news items"
+    },
+    "/newsletterSubscribers/{subscriberId}": {
+      "schema": "NewsletterSubscriber",
+      "description": "Newsletter email subscribers"
+    }
+  }
+}

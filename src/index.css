@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-arabic: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-heading: 'Cairo', 'IBM Plex Sans Arabic', sans-serif;
+  }
+
+  body {
+    font-family: var(--font-arabic);
+    background-color: #f8fafc;
+    color: #0f172a;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.015em;
+  }
+}
+
+/* Custom scrollbar for news tickers and categories */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
