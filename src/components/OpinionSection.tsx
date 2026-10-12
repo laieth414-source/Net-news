@@ -47,7 +47,16 @@ export const OpinionSection: React.FC<OpinionSectionProps> = ({
 
               {/* Column Title */}
               <h3 className="text-base sm:text-lg font-bold text-slate-950 group-hover:text-sky-900 transition-colors leading-snug mb-3">
-                {item.title}
+                <a
+                  href={`/article/${item.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onSelectArticle(item.id);
+                  }}
+                  className="hover:underline"
+                >
+                  {item.title}
+                </a>
               </h3>
 
               {/* Excerpt */}
@@ -58,9 +67,16 @@ export const OpinionSection: React.FC<OpinionSectionProps> = ({
 
             <div className="flex items-center justify-between text-xs text-slate-400 pt-3 border-t border-slate-100">
               <span>{item.readTime}</span>
-              <span className="text-sky-800 font-semibold group-hover:underline">
+              <a
+                href={`/article/${item.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onSelectArticle(item.id);
+                }}
+                className="text-sky-800 font-semibold group-hover:underline"
+              >
                 قراءة المقال بالكامل
-              </span>
+              </a>
             </div>
           </article>
         ))}

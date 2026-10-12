@@ -181,12 +181,16 @@ export const Footer: React.FC<FooterProps> = ({
             {footerPages.map((page, idx) => (
               <React.Fragment key={page.slug || page.id}>
                 {idx > 0 && <span>·</span>}
-                <button
-                  onClick={() => onOpenPage?.(page.slug)}
+                <a
+                  href={`/page/${page.slug}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onOpenPage?.(page.slug);
+                  }}
                   className="hover:text-sky-300 text-slate-300 transition-colors cursor-pointer text-right font-medium"
                 >
                   {page.title}
-                </button>
+                </a>
               </React.Fragment>
             ))}
             {onOpenAdmin && (

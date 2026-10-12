@@ -60,7 +60,16 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
                   </div>
 
                   <h3 className="text-lg sm:text-xl font-bold text-slate-950 group-hover:text-sky-900 transition-colors leading-snug mb-2.5">
-                    {lead.title}
+                    <a
+                      href={`/article/${lead.id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onSelectArticle(lead.id);
+                      }}
+                      className="hover:underline"
+                    >
+                      {lead.title}
+                    </a>
                   </h3>
 
                   <p className="text-slate-600 text-sm leading-relaxed line-clamp-3">
@@ -71,10 +80,17 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
 
               <div className="px-5 pb-4 pt-1 flex items-center justify-between text-xs text-slate-500 border-t border-slate-100">
                 <span>{lead.viewsCount || 'تغطية مستمرة'}</span>
-                <span className="text-sky-800 font-semibold group-hover:underline flex items-center gap-1">
+                <a
+                  href={`/article/${lead.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onSelectArticle(lead.id);
+                  }}
+                  className="text-sky-800 font-semibold group-hover:underline flex items-center gap-1"
+                >
                   اقرأ التقرير
                   <ArrowUpLeft size={13} />
-                </span>
+                </a>
               </div>
             </article>
           </div>
@@ -102,7 +118,16 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
                     <span>{item.readTime}</span>
                   </div>
                   <h4 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-sky-900 leading-snug line-clamp-2 mb-1">
-                    {item.title}
+                    <a
+                      href={`/article/${item.id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onSelectArticle(item.id);
+                      }}
+                      className="hover:underline"
+                    >
+                      {item.title}
+                    </a>
                   </h4>
                   <p className="text-slate-500 text-xs line-clamp-1 hidden sm:block">
                     {item.deck}
@@ -142,7 +167,16 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
                     <span>{item.readTime}</span>
                   </div>
                   <h3 className="text-base font-bold text-slate-900 group-hover:text-sky-900 transition-colors leading-snug mb-2">
-                    {item.title}
+                    <a
+                      href={`/article/${item.id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onSelectArticle(item.id);
+                      }}
+                      className="hover:underline"
+                    >
+                      {item.title}
+                    </a>
                   </h3>
                   <p className="text-slate-600 text-xs sm:text-sm line-clamp-2 leading-relaxed">
                     {item.deck}
@@ -152,10 +186,17 @@ export const CategorySection: React.FC<CategorySectionProps> = ({
 
               <div className="px-5 pb-4 pt-1 flex items-center justify-between text-xs text-slate-500 border-t border-slate-100">
                 <span className="truncate max-w-[160px]">{item.source}</span>
-                <span className="text-sky-800 font-semibold group-hover:underline flex items-center gap-1">
+                <a
+                  href={`/article/${item.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onSelectArticle(item.id);
+                  }}
+                  className="text-sky-800 font-semibold group-hover:underline flex items-center gap-1"
+                >
                   التفاصيل
                   <ArrowUpLeft size={13} />
-                </span>
+                </a>
               </div>
             </article>
           ))}

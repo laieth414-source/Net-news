@@ -66,9 +66,22 @@ export const BreakingBar: React.FC<BreakingBarProps> = ({ items = [], onSelectAr
               <span className="text-red-400 text-xs font-semibold shrink-0">
                 [{current.category || 'عاجل'}]
               </span>
-              <p className="truncate text-xs sm:text-sm text-slate-200 group-hover:underline">
-                {current.text || ''}
-              </p>
+              {current.articleId ? (
+                <a
+                  href={`/article/${current.articleId}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onSelectArticle(current.articleId!);
+                  }}
+                  className="truncate text-xs sm:text-sm text-slate-200 group-hover:underline"
+                >
+                  {current.text || ''}
+                </a>
+              ) : (
+                <p className="truncate text-xs sm:text-sm text-slate-200 group-hover:underline">
+                  {current.text || ''}
+                </p>
+              )}
               {current.time && (
                 <span className="text-slate-500 text-xs shrink-0 font-light hidden md:inline">
                   {current.time}

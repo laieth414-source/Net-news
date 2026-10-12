@@ -41,6 +41,7 @@ import { AdminModal } from './components/AdminModal';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { AdminLoginView } from './components/admin/AdminLoginView';
 import { trackPageView, startVisitorHeartbeat } from './lib/analytics';
+import { updateDocumentSeo } from './lib/seo';
 import { ShieldCheck } from 'lucide-react';
 
 export default function App() {
@@ -237,23 +238,51 @@ export default function App() {
     return articles.find((a) => a.id === selectedArticleId) || null;
   }, [selectedArticleId, articles]);
 
-  // Real-time visitor analytics tracking & page title
+  // Real-time visitor analytics tracking & dynamic SEO meta updates
   useEffect(() => {
     if (viewMode === 'site') {
       if (selectedPageSlug) {
         const page = staticPages[selectedPageSlug] || STATIC_PAGES_DATA[selectedPageSlug];
-        const pageTitle = page?.title || 'صفحة';
-        document.title = `${pageTitle} | NET NEWS`;
-        trackPageView(`/page/${selectedPageSlug}`, `${pageTitle} - NET NEWS`);
+        const pageTitle = page?.title ? `${page.title} | NET NEWS` : 'صفحة | NET NEWS';
+        const pageDesc = page?.subtitle || page?.excerpt || 'بوابة إخبارية عربية رصينة';
+        updateDocumentSeo({
+          title: pageTitle,
+          description: pageDesc,
+          canonicalPath: `/page/${selectedPageSlug}`,
+          type: 'website'
+        });
+        trackPageView(`/page/${selectedPageSlug}`, `${page?.title || 'صفحة'} - NET NEWS`);
       } else if (selectedArticleId && selectedArticle) {
-        document.title = `${selectedArticle.title} | NET NEWS`;
+        const articleTitle = `${selectedArticle.title} | NET NEWS`;
+        const articleDesc = selectedArticle.deck || (Array.isArray(selectedArticle.content) ? selectedArticle.content[0] : '') || 'بوابة إخبارية عربية رصينة';
+        updateDocumentSeo({
+          title: articleTitle,
+          description: articleDesc,
+          canonicalPath: `/article/${selectedArticleId}`,
+          type: 'article',
+          section: selectedArticle.categoryName,
+          authorName: selectedArticle.source || 'نت نيوز'
+        });
         trackPageView(`/article/${selectedArticleId}`, selectedArticle.title);
       } else if (activeCategory && activeCategory !== 'all') {
         const catObj = categories.find((c) => c.id === activeCategory);
-        document.title = `${catObj?.name || activeCategory} | NET NEWS`;
-        trackPageView(`/category/${activeCategory}`, `قسم: ${catObj?.name || activeCategory}`);
+        const catName = catObj?.name || activeCategory;
+        const catTitle = `${catName} | NET NEWS`;
+        const catDesc = catObj?.description || `أحدث أخبار وتغطيات قسم ${catName} على مدار الساعة.`;
+        updateDocumentSeo({
+          title: catTitle,
+          description: catDesc,
+          canonicalPath: `/category/${activeCategory}`,
+          type: 'website'
+        });
+        trackPageView(`/category/${activeCategory}`, `قسم: ${catName}`);
       } else {
-        document.title = 'NET NEWS | نت نيوز';
+        updateDocumentSeo({
+          title: 'NET NEWS | نت نيوز',
+          description: 'بوابة إخبارية عربية رصينة تقدم تغطية متكاملة للأحداث العالمية والعربية والخليجية والملفات الاقتصادية والرياضية والتقنية بموضوعية واحترافية.',
+          canonicalPath: '/',
+          type: 'website'
+        });
         trackPageView('/', 'الرئيسية - NET NEWS');
       }
     }

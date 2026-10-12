@@ -57,7 +57,16 @@ export const MostReadSection: React.FC<MostReadSectionProps> = ({
 
                 {/* Title */}
                 <h3 className="text-sm sm:text-base font-bold text-slate-100 group-hover:text-sky-300 transition-colors leading-snug line-clamp-3 mb-2">
-                  {item.title}
+                  <a
+                    href={`/article/${item.id}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onSelectArticle(item.id);
+                    }}
+                    className="hover:underline"
+                  >
+                    {item.title}
+                  </a>
                 </h3>
               </div>
 

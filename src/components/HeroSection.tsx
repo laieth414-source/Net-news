@@ -63,7 +63,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
               {/* Lead Headline */}
               <h1 className="text-2xl sm:text-3xl lg:text-3.5xl font-bold text-slate-950 group-hover:text-sky-900 transition-colors leading-tight mb-3">
-                {leadArticle.title}
+                <a
+                  href={`/article/${leadArticle.id}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onSelectArticle(leadArticle.id);
+                  }}
+                  className="hover:underline"
+                >
+                  {leadArticle.title}
+                </a>
               </h1>
 
               {/* Excerpt / Deck */}
@@ -145,7 +154,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                     </div>
 
                     <h3 className="text-base sm:text-lg font-bold text-slate-950 group-hover:text-sky-900 transition-colors leading-snug mb-2">
-                      {article.title}
+                      <a
+                        href={`/article/${article.id}`}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          onSelectArticle(article.id);
+                        }}
+                        className="hover:underline"
+                      >
+                        {article.title}
+                      </a>
                     </h3>
 
                     <p className="text-slate-600 text-xs sm:text-sm line-clamp-2 leading-relaxed">
@@ -156,10 +174,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
 
                 <div className="px-4 sm:px-5 pb-4 pt-1 flex items-center justify-between text-xs text-slate-500 border-t border-slate-100">
                   <span className="truncate max-w-[200px]">{article.source}</span>
-                  <span className="text-sky-800 font-medium group-hover:underline flex items-center gap-0.5">
+                  <a
+                    href={`/article/${article.id}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onSelectArticle(article.id);
+                    }}
+                    className="text-sky-800 font-medium group-hover:underline flex items-center gap-0.5"
+                  >
                     التفاصيل
                     <ArrowUpLeft size={13} />
-                  </span>
+                  </a>
                 </div>
               </article>
             ))}
