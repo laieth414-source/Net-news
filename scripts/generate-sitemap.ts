@@ -3,7 +3,7 @@ import path from 'node:path';
 import { ARTICLES } from '../src/data/newsData';
 
 const BASE_URL = 'https://netnews1.netlify.app';
-const FIRESTORE_URL = 'https://firestore.googleapis.com/v1/projects/netnews-617e7/databases/(default)/documents/articles';
+const FIRESTORE_BASE_URL = 'https://firestore.googleapis.com/v1/projects/netnews-617e7/databases/(default)/documents/articles';
 
 interface ArticleEntry {
   id: string;
@@ -11,44 +11,78 @@ interface ArticleEntry {
 }
 
 async function fetchFirestoreArticles(): Promise<ArticleEntry[]> {
+  const list: ArticleEntry[] = [];
+  const seenIds = new Set<string>();
+
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
-    const res = await fetch(FIRESTORE_URL, { signal: controller.signal });
-    clearTimeout(timeout);
+    let pageToken: string | undefined = undefined;
+    let pageCount = 0;
 
-    if (!res.ok) {
-      console.warn(`Firestore REST returned status ${res.status}. Falling back to newsData.`);
-      return ARTICLES.map(a => ({ id: a.id }));
-    }
-
-    const data = await res.json();
-    const docs = data.documents || [];
-    const list: ArticleEntry[] = [];
-
-    for (const doc of docs) {
-      const id = doc.name.split('/').pop();
-      const fields = doc.fields || {};
-      const status = fields.status?.stringValue || 'published';
-      
-      // Only include published articles
-      if (status === 'published' && id) {
-        list.push({
-          id,
-          updatedAt: doc.updateTime || new Date().toISOString(),
-        });
+    do {
+      pageCount++;
+      const url = new URL(FIRESTORE_BASE_URL);
+      url.searchParams.set('pageSize', '300');
+      if (pageToken) {
+        url.searchParams.set('pageToken', pageToken);
       }
-    }
 
-    if (list.length > 0) {
-      console.log(`Successfully fetched ${list.length} published articles from Firestore.`);
-      return list;
-    }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      const res = await fetch(url.toString(), { signal: controller.signal });
+      clearTimeout(timeout);
+
+      if (!res.ok) {
+        console.warn(`Firestore REST returned status ${res.status} on page ${pageCount}.`);
+        break;
+      }
+
+      const data = await res.json();
+      const docs = data.documents || [];
+
+      for (const doc of docs) {
+        const id = doc.name ? doc.name.split('/').pop() : undefined;
+        if (!id || seenIds.has(id)) continue;
+
+        const fields = doc.fields || {};
+        const status = fields.status?.stringValue || 'published';
+
+        // Only include published articles (or default published)
+        if (status === 'published' || !fields.status) {
+          seenIds.add(id);
+          const updateTime =
+            fields.updatedAt?.timestampValue ||
+            doc.updateTime ||
+            fields.createdAt?.timestampValue ||
+            doc.createTime ||
+            new Date().toISOString();
+
+          list.push({
+            id,
+            updatedAt: updateTime,
+          });
+        }
+      }
+
+      pageToken = data.nextPageToken;
+    } while (pageToken);
+
+    console.log(`Fetched ${list.length} published articles from Firestore across ${pageCount} page(s).`);
   } catch (err) {
-    console.warn('Notice: Could not fetch from Firestore REST during build, using newsData:', err);
+    console.warn('Notice: Error fetching articles from Firestore REST:', err);
   }
 
-  return ARTICLES.map(a => ({ id: a.id }));
+  // Merge any local fallback articles that aren't already in Firestore
+  for (const local of ARTICLES) {
+    if (!seenIds.has(local.id)) {
+      seenIds.add(local.id);
+      list.push({
+        id: local.id,
+        updatedAt: undefined,
+      });
+    }
+  }
+
+  return list;
 }
 
 function formatDate(isoOrStr?: string): string {
@@ -65,6 +99,7 @@ function formatDate(isoOrStr?: string): string {
 }
 
 async function generate() {
+  console.log('Generating sitemap.xml...');
   const articles = await fetchFirestoreArticles();
   const today = new Date().toISOString().split('T')[0];
 

@@ -4,7 +4,7 @@ import { ARTICLES } from '../src/data/newsData';
 import { STATIC_PAGES_DATA } from '../src/data/staticPagesData';
 
 const BASE_URL = 'https://netnews1.netlify.app';
-const FIRESTORE_URL = 'https://firestore.googleapis.com/v1/projects/netnews-617e7/databases/(default)/documents/articles';
+const FIRESTORE_BASE_URL = 'https://firestore.googleapis.com/v1/projects/netnews-617e7/databases/(default)/documents/articles';
 
 interface RemoteArticle {
   id: string;
@@ -19,6 +19,7 @@ interface RemoteArticle {
   viewsCount?: string;
   imageCaption?: string;
   imageUrl?: string;
+  createdAt?: string;
   updatedAt?: string;
 }
 
@@ -33,85 +34,97 @@ function escapeHtml(text: string): string {
 }
 
 async function fetchFirestoreArticles(): Promise<RemoteArticle[]> {
+  const list: RemoteArticle[] = [];
+  const seenIds = new Set<string>();
+
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
-    const res = await fetch(FIRESTORE_URL, { signal: controller.signal });
-    clearTimeout(timeout);
+    let pageToken: string | undefined = undefined;
+    let pageCount = 0;
 
-    if (!res.ok) {
-      console.warn(`Firestore REST returned status ${res.status}. Falling back to newsData.`);
-      return ARTICLES.map(a => ({
-        id: a.id,
-        title: a.title,
-        deck: a.deck,
-        content: a.content,
-        categoryName: a.categoryName,
-        categoryId: a.categoryId,
-        publishedAt: a.publishedAt,
-        source: a.source,
-        readTime: a.readTime,
-        viewsCount: a.viewsCount,
-        imageCaption: a.imageCaption,
-        imageUrl: a.imageUrl,
-        updatedAt: undefined
-      }));
-    }
-
-    const data = await res.json();
-    const docs = data.documents || [];
-    const list: RemoteArticle[] = [];
-
-    for (const doc of docs) {
-      const id = doc.name.split('/').pop();
-      const fields = doc.fields || {};
-      const status = fields.status?.stringValue || 'published';
-
-      if (status === 'published' && id) {
-        const rawContent = fields.content?.arrayValue?.values || [];
-        const content = rawContent.map((v: any) => v.stringValue).filter(Boolean);
-
-        list.push({
-          id,
-          title: fields.title?.stringValue,
-          deck: fields.deck?.stringValue,
-          content: content.length > 0 ? content : undefined,
-          categoryName: fields.categoryName?.stringValue,
-          categoryId: fields.categoryId?.stringValue,
-          publishedAt: fields.publishedAt?.stringValue,
-          source: fields.source?.stringValue,
-          readTime: fields.readTime?.stringValue,
-          viewsCount: fields.viewsCount?.stringValue,
-          imageCaption: fields.imageCaption?.stringValue,
-          imageUrl: fields.imageUrl?.stringValue,
-          updatedAt: doc.updateTime || new Date().toISOString(),
-        });
+    do {
+      pageCount++;
+      const url = new URL(FIRESTORE_BASE_URL);
+      url.searchParams.set('pageSize', '300');
+      if (pageToken) {
+        url.searchParams.set('pageToken', pageToken);
       }
-    }
 
-    if (list.length > 0) {
-      console.log(`Successfully fetched ${list.length} published articles from Firestore.`);
-      return list;
-    }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+      const res = await fetch(url.toString(), { signal: controller.signal });
+      clearTimeout(timeout);
+
+      if (!res.ok) {
+        console.warn(`Firestore REST returned status ${res.status} on page ${pageCount}.`);
+        break;
+      }
+
+      const data = await res.json();
+      const docs = data.documents || [];
+
+      for (const doc of docs) {
+        const id = doc.name ? doc.name.split('/').pop() : undefined;
+        if (!id || seenIds.has(id)) continue;
+
+        const fields = doc.fields || {};
+        const status = fields.status?.stringValue || 'published';
+
+        if (status === 'published' || !fields.status) {
+          seenIds.add(id);
+          const rawContent = fields.content?.arrayValue?.values || [];
+          const content = rawContent.map((v: any) => v.stringValue).filter(Boolean);
+
+          list.push({
+            id,
+            title: fields.title?.stringValue,
+            deck: fields.deck?.stringValue,
+            content: content.length > 0 ? content : undefined,
+            categoryName: fields.categoryName?.stringValue,
+            categoryId: fields.categoryId?.stringValue,
+            publishedAt: fields.publishedAt?.stringValue,
+            source: fields.source?.stringValue,
+            readTime: fields.readTime?.stringValue,
+            viewsCount: fields.viewsCount?.stringValue,
+            imageCaption: fields.imageCaption?.stringValue,
+            imageUrl: fields.imageUrl?.stringValue,
+            createdAt: fields.createdAt?.timestampValue || doc.createTime,
+            updatedAt: fields.updatedAt?.timestampValue || doc.updateTime || new Date().toISOString(),
+          });
+        }
+      }
+
+      pageToken = data.nextPageToken;
+    } while (pageToken);
+
+    console.log(`Fetched ${list.length} articles from Firestore across ${pageCount} page(s) for prerendering.`);
   } catch (err) {
-    console.warn('Notice: Could not fetch from Firestore REST during build, using newsData:', err);
+    console.warn('Notice: Error fetching articles for prerendering:', err);
   }
 
-  return ARTICLES.map(a => ({
-    id: a.id,
-    title: a.title,
-    deck: a.deck,
-    content: a.content,
-    categoryName: a.categoryName,
-    categoryId: a.categoryId,
-    publishedAt: a.publishedAt,
-    source: a.source,
-    readTime: a.readTime,
-    viewsCount: a.viewsCount,
-    imageCaption: a.imageCaption,
-    imageUrl: a.imageUrl,
-    updatedAt: undefined
-  }));
+  // Merge any local fallback articles that aren't already in Firestore
+  for (const local of ARTICLES) {
+    if (!seenIds.has(local.id)) {
+      seenIds.add(local.id);
+      list.push({
+        id: local.id,
+        title: local.title,
+        deck: local.deck,
+        content: local.content,
+        categoryName: local.categoryName,
+        categoryId: local.categoryId,
+        publishedAt: local.publishedAt,
+        source: local.source,
+        readTime: local.readTime,
+        viewsCount: local.viewsCount,
+        imageCaption: local.imageCaption,
+        imageUrl: local.imageUrl,
+        createdAt: undefined,
+        updatedAt: undefined
+      });
+    }
+  }
+
+  return list;
 }
 
 export async function prerenderPrerenderedRoutes() {
