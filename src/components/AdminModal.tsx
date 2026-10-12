@@ -209,7 +209,7 @@ export const AdminModal: React.FC<AdminModalProps> = ({
                 className="text-xs text-sky-800 hover:text-sky-950 font-medium flex items-center gap-1.5"
               >
                 <LogIn size={13} />
-                <span>تسجيل الدخول بـ Google كمدير ({ADMIN_EMAIL})</span>
+                <span>الدخول باستخدام Google</span>
               </button>
             )}
           </div>

@@ -17,8 +17,7 @@ import {
   loginWithGoogle,
   checkIsAdminUser,
   logoutUser,
-  sendAdminPasswordResetEmail,
-  ADMIN_EMAIL
+  sendAdminPasswordResetEmail
 } from '../../lib/firebase';
 
 interface AdminLoginViewProps {
@@ -30,7 +29,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
   onBackToSite,
   onLoginSuccess
 }) => {
-  const [email, setEmail] = useState(ADMIN_EMAIL);
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -39,7 +38,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // 1. Google One-Click Sign In
+  // 1. Google Sign In
   const handleGoogleSignIn = async () => {
     setErrorMsg(null);
     setSuccessMsg(null);
@@ -54,7 +53,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
       } else {
         await logoutUser();
         setErrorMsg(
-          `تم تسجيل الدخول بالبريد (${user.email}) بنجاح، لكن هذا الحساب لا يملك صلاحية إدارة الموقع. الوصول مخصص لمدير الموقع (${ADMIN_EMAIL}).`
+          `تم تسجيل الدخول بالبريد (${user.email}) بنجاح، لكن هذا الحساب لا يملك صلاحية إدارة الموقع. الوصول مخصص لمدير الموقع.`
         );
       }
     } catch (err: unknown) {
@@ -86,7 +85,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
 
     const cleanEmail = email.trim();
     if (!cleanEmail) {
-      setErrorMsg('يرجى إدخال البريد الإلكتروني للمدير.');
+      setErrorMsg('يرجى إدخال البريد الإلكتروني.');
       return;
     }
 
@@ -110,7 +109,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
         // Sign out unauthorized regular user immediately
         await logoutUser();
         setErrorMsg(
-          `تم تسجيل الدخول بالبريد (${user.email}) بنجاح، ولكن هذا الحساب لا يملك صلاحية إدارة الموقع. الوصول مخصص للمدير المصرح له (${ADMIN_EMAIL}).`
+          `تم تسجيل الدخول بالبريد (${user.email}) بنجاح، ولكن هذا الحساب لا يملك صلاحية إدارة الموقع. الوصول مخصص لمدير الموقع المصرح له.`
         );
       }
     } catch (err: unknown) {
@@ -124,7 +123,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
         case 'auth/invalid-credential':
         case 'auth/wrong-password':
           setErrorMsg(
-            'بيانات الدخول غير صحيحة أو أن هذا البريد مسجل بواسطة حساب Google. يمكنك الضغط على زر "تسجيل الدخول السريع بحساب Google" بالأعلى أو استخدام رابط تعيين كلمة المرور أدناه.'
+            'بيانات الدخول غير صحيحة أو أن هذا البريد مسجل بواسطة حساب Google. يمكنك الضغط على زر "الدخول باستخدام Google" بالأعلى أو استخدام رابط تعيين كلمة المرور أدناه.'
           );
           break;
         case 'auth/invalid-email':
@@ -155,7 +154,11 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
 
   // 3. Password Reset
   const handlePasswordReset = async () => {
-    const targetEmail = email.trim() || ADMIN_EMAIL;
+    const targetEmail = email.trim();
+    if (!targetEmail) {
+      setErrorMsg('يرجى كتابة البريد الإلكتروني أولاً في حقل البريد لإرسال رابط استعادة كلمة المرور.');
+      return;
+    }
     setErrorMsg(null);
     setSuccessMsg(null);
     setResetLoading(true);
@@ -236,7 +239,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                 </svg>
-                <span>الدخول السريع بحساب Google ({ADMIN_EMAIL})</span>
+                <span>الدخول باستخدام Google</span>
               </>
             )}
           </button>
@@ -256,7 +259,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
           {/* Email field */}
           <div className="space-y-1.5 text-right">
             <label className="block text-xs font-semibold text-slate-300">
-              البريد الإلكتروني للمدير
+              البريد الإلكتروني
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-slate-400">
@@ -269,7 +272,7 @@ export const AdminLoginView: React.FC<AdminLoginViewProps> = ({
                 dir="ltr"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="laieth772@gmail.com"
+                placeholder="name@example.com"
                 disabled={loading || googleLoading}
                 className="w-full bg-slate-900/90 border border-slate-700 focus:border-sky-500 focus:ring-1 focus:ring-sky-500 rounded-xl py-2.5 pr-10 pl-3.5 text-sm text-white placeholder-slate-500 transition-colors disabled:opacity-50 text-left font-mono"
               />
