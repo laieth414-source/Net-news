@@ -158,9 +158,9 @@ Sitemap: ${BASE_URL}/sitemap.xml
 
   const redirectsContent = `/https:*           /sitemap.xml       301!
 /http:*            /sitemap.xml       301!
+/sitemap           /sitemap.xml       301!
+/sitemap_index.xml /sitemap.xml       301!
 /sitemap.xml       /.netlify/functions/sitemap  200!
-/sitemap           /.netlify/functions/sitemap  301!
-/sitemap_index.xml /.netlify/functions/sitemap  301!
 /*                 /index.html        200
 `;
 
