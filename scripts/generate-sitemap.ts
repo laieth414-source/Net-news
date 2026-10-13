@@ -156,12 +156,13 @@ Allow: /
 Sitemap: ${BASE_URL}/sitemap.xml
 `;
 
-  const redirectsContent = `/https:*           /sitemap.xml       301!
-/http:*            /sitemap.xml       301!
-/sitemap           /sitemap.xml       301!
-/sitemap_index.xml /sitemap.xml       301!
-/sitemap.xml       /.netlify/functions/sitemap  200!
-/*                 /index.html        200
+  const redirectsContent = `/https:*           /sitemap.xml                        301!
+/http:*            /sitemap.xml                        301!
+/sitemap           /sitemap.xml                        301!
+/sitemap_index.xml /sitemap.xml                        301!
+/sitemap.xml       /.netlify/functions/sitemap         200!
+/article/*         /.netlify/functions/article/:splat  200!
+/*                 /index.html                         200
 `;
 
   const headersContent = `/sitemap.xml

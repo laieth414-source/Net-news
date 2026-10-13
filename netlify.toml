@@ -4,6 +4,7 @@
 
 [functions]
   directory = "netlify/functions"
+  included_files = ["dist/index.html", "netlify/functions/base-index.html"]
 
 [[redirects]]
   from = "/sitemap.xml"
@@ -23,6 +24,12 @@
   status = 301
   force = true
 
+[[redirects]]
+  from = "/article/*"
+  to = "/.netlify/functions/article/:splat"
+  status = 200
+  force = true
+
 [[headers]]
   for = "/sitemap.xml"
   [headers.values]
@@ -36,5 +43,13 @@
   [headers.values]
     Content-Type = "text/plain; charset=utf-8"
     X-Robots-Tag = "all"
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/article/*"
+  [headers.values]
+    Content-Type = "text/html; charset=utf-8"
+    X-Robots-Tag = "all, index, follow"
     Cache-Control = "public, max-age=0, must-revalidate"
     Access-Control-Allow-Origin = "*"
