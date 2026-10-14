@@ -23,7 +23,7 @@ export const AdminSeoView: React.FC<AdminSeoViewProps> = ({ seo, onSaveSeo }) =>
     metaDescription:
       seo?.metaDescription ||
       'بوابة إخبارية عربية رصينة تقدم تغطية متكاملة للأحداث العالمية والعربية والخليجية والملفات الاقتصادية والرياضية والتكنولوجية بموضوعية واحترافية.',
-    canonicalUrl: seo?.canonicalUrl || 'https://netnews1.netlify.app',
+    canonicalUrl: seo?.canonicalUrl || 'https://netnews1-new.netlify.app',
     ogImage: seo?.ogImage || '/og-image.png',
     twitterHandle: seo?.twitterHandle || '',
     enableStructuredData: seo?.enableStructuredData !== false,

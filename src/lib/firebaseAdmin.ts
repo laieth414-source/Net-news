@@ -495,7 +495,7 @@ export async function saveSiteSettingsAdmin(settings: SiteSettings): Promise<voi
 export const DEFAULT_SEO_SETTINGS: SeoSettings = {
   metaTitle: 'NET NEWS | نت نيوز - شبكة إخبارية عربية مستقلة',
   metaDescription: 'آخر الأخبار السياسية والاقتصادية والرياضية والتقنية في العالم والشرق الأوسط والخليج العربي لحظة بلحظة.',
-  canonicalUrl: 'https://netnews1.netlify.app',
+  canonicalUrl: 'https://netnews1-new.netlify.app',
   ogImage: '/og-image.png',
   twitterHandle: '',
   enableStructuredData: true,

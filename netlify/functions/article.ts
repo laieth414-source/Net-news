@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ARTICLES } from '../../src/data/newsData';
 
-const BASE_URL = 'https://netnews1.netlify.app';
+const BASE_URL = 'https://netnews1-new.netlify.app';
 const FIRESTORE_BASE_URL = 'https://firestore.googleapis.com/v1/projects/netnews-617e7/databases/(default)/documents/articles';
 
 let cachedBaseHtml: string | null = null;
@@ -99,7 +99,7 @@ async function getBaseHtml(): Promise<string> {
     <meta name="description" content="بوابة إخبارية عربية رصينة تقدم تغطية متكاملة للأحداث العالمية والعربية والخليجية والملفات الاقتصادية والرياضية والتقنية بموضوعية واحترافية." />
     <meta name="google-site-verification" content="ZoVgz7xkH-XyPbmf_Mqc9MKwD10c0NOKnNdOXYNHj-k" />
     <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
-    <link rel="canonical" href="https://netnews1.netlify.app/" />
+    <link rel="canonical" href="https://netnews1-new.netlify.app/" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet" />

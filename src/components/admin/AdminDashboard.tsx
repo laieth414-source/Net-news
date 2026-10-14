@@ -668,7 +668,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               seo={{
                 metaTitle: siteSettings.siteName,
                 metaDescription: siteSettings.siteDescription,
-                canonicalUrl: 'https://netnews1.netlify.app',
+                canonicalUrl: 'https://netnews1-new.netlify.app',
                 ogImage: '/og-image.png',
                 twitterHandle: '',
                 enableStructuredData: true,

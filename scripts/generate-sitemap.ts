@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ARTICLES } from '../src/data/newsData';
 
-const BASE_URL = 'https://netnews1.netlify.app';
+const BASE_URL = 'https://netnews1-new.netlify.app';
 const FIRESTORE_BASE_URL = 'https://firestore.googleapis.com/v1/projects/netnews-617e7/databases/(default)/documents/articles';
 
 interface ArticleEntry {

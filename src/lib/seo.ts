@@ -2,7 +2,7 @@
  * Utility to keep document SEO meta tags, canonical link, and JSON-LD schema in sync with active view.
  */
 
-const BASE_URL = 'https://netnews1.netlify.app';
+const BASE_URL = 'https://netnews1-new.netlify.app';
 
 export function updateDocumentSeo(options: {
   title: string;
