@@ -30,6 +30,12 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/page/:slug/"
+  to = "/page/:slug"
+  status = 301
+  force = true
+
 [[headers]]
   for = "/sitemap.xml"
   [headers.values]
@@ -48,6 +54,14 @@
 
 [[headers]]
   for = "/article/*"
+  [headers.values]
+    Content-Type = "text/html; charset=utf-8"
+    X-Robots-Tag = "all, index, follow"
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/page/*"
   [headers.values]
     Content-Type = "text/html; charset=utf-8"
     X-Robots-Tag = "all, index, follow"

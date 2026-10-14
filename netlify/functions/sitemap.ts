@@ -113,7 +113,7 @@ function buildSitemapXml(articles: ArticleEntry[]): string {
   for (const art of articles) {
     const lastMod = formatDate(art.updatedAt);
     urls.push(`  <url>
-    <loc>${BASE_URL}/article/${encodeURI(art.id)}</loc>
+    <loc>${BASE_URL}/article/${encodeURIComponent(art.id)}</loc>
     <lastmod>${lastMod}</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>

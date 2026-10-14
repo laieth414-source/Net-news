@@ -101,7 +101,14 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Center Zone: Textual Brand Logo */}
-          <div className="text-center cursor-pointer select-none" onClick={() => onSelectCategory('all')}>
+          <a
+            href="/"
+            className="text-center cursor-pointer select-none block"
+            onClick={(e) => {
+              e.preventDefault();
+              onSelectCategory('all');
+            }}
+          >
             <div className="flex items-center justify-center gap-2 sm:gap-3">
               <span className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight font-serif text-white">
                 NET NEWS
@@ -113,7 +120,7 @@ export const Header: React.FC<HeaderProps> = ({
             <p className="text-[10px] sm:text-xs text-slate-300 font-light tracking-widest mt-0.5">
               شبكة إخبارية عربية رقمية مستقلة · تأسست عام 2026
             </p>
-          </div>
+          </a>
 
           {/* Left Zone (in RTL): Live Search trigger */}
           <div className="flex items-center gap-2 sm:gap-3">

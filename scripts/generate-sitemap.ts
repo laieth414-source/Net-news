@@ -162,6 +162,7 @@ Sitemap: ${BASE_URL}/sitemap.xml
 /sitemap_index.xml /sitemap.xml                        301!
 /sitemap.xml       /.netlify/functions/sitemap         200!
 /article/*         /.netlify/functions/article/:splat  200!
+/page/:slug/       /page/:slug                         301!
 /*                 /index.html                         200
 `;
 
@@ -174,6 +175,18 @@ Sitemap: ${BASE_URL}/sitemap.xml
 /robots.txt
   Content-Type: text/plain; charset=utf-8
   X-Robots-Tag: all
+  Cache-Control: public, max-age=0, must-revalidate
+  Access-Control-Allow-Origin: *
+
+/article/*
+  Content-Type: text/html; charset=utf-8
+  X-Robots-Tag: all, index, follow
+  Cache-Control: public, max-age=0, must-revalidate
+  Access-Control-Allow-Origin: *
+
+/page/*
+  Content-Type: text/html; charset=utf-8
+  X-Robots-Tag: all, index, follow
   Cache-Control: public, max-age=0, must-revalidate
   Access-Control-Allow-Origin: *
 `;

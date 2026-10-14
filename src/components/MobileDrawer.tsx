@@ -65,10 +65,13 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
           </span>
           {CATEGORIES.map((cat) => {
             const isActive = activeCategory === cat.id;
+            const href = cat.id === 'all' ? '/' : `/#${cat.id}`;
             return (
-              <button
+              <a
                 key={cat.id}
-                onClick={() => {
+                href={href}
+                onClick={(e) => {
+                  e.preventDefault();
                   onSelectCategory(cat.id);
                   onClose();
                 }}
@@ -80,7 +83,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
               >
                 <span>{cat.name}</span>
                 <ChevronLeft size={16} className="text-slate-400" />
-              </button>
+              </a>
             );
           })}
 

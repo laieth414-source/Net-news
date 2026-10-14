@@ -238,11 +238,15 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
                 قد يهمك أيضاً في هذا السياق
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {relatedArticles.slice(0, 2).map((rel) => (
-                  <div
+                {relatedArticles.slice(0, 4).map((rel) => (
+                  <a
                     key={rel.id}
-                    onClick={() => onSelectArticle(rel.id)}
-                    className="border border-slate-200 rounded-lg p-4 hover:border-sky-300 hover:shadow-xs transition-all cursor-pointer group"
+                    href={`/article/${encodeURIComponent(rel.id)}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onSelectArticle(rel.id);
+                    }}
+                    className="border border-slate-200 rounded-lg p-4 hover:border-sky-300 hover:shadow-xs transition-all cursor-pointer group block text-right"
                   >
                     <span className="text-[11px] font-semibold text-sky-800 block mb-1">
                       {rel.categoryName}
@@ -251,7 +255,7 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
                       {rel.title}
                     </h4>
                     <span className="text-xs text-slate-400 mt-2 block">{rel.timestamp}</span>
-                  </div>
+                  </a>
                 ))}
               </div>
             </div>

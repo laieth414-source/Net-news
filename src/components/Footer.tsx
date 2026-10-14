@@ -83,12 +83,16 @@ export const Footer: React.FC<FooterProps> = ({
               <ul className="space-y-2 text-xs text-slate-300">
                 {CATEGORIES.slice(0, 5).map((c) => (
                   <li key={c.id}>
-                    <button
-                      onClick={() => onSelectCategory(c.id)}
-                      className="hover:text-sky-400 hover:underline transition-colors text-right"
+                    <a
+                      href={c.id === 'all' ? '/' : `/#${c.id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onSelectCategory(c.id);
+                      }}
+                      className="hover:text-sky-400 hover:underline transition-colors text-right inline-block"
                     >
                       {c.name}
-                    </button>
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -101,12 +105,16 @@ export const Footer: React.FC<FooterProps> = ({
               <ul className="space-y-2 text-xs text-slate-300">
                 {CATEGORIES.slice(5).map((c) => (
                   <li key={c.id}>
-                    <button
-                      onClick={() => onSelectCategory(c.id)}
-                      className="hover:text-sky-400 hover:underline transition-colors text-right"
+                    <a
+                      href={`/#${c.id}`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        onSelectCategory(c.id);
+                      }}
+                      className="hover:text-sky-400 hover:underline transition-colors text-right inline-block"
                     >
                       {c.name}
-                    </button>
+                    </a>
                   </li>
                 ))}
                 <li>

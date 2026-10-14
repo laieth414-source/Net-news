@@ -247,6 +247,60 @@ async function fetchArticleById(id: string): Promise<{ data?: ArticleData; notFo
   return { notFound: true };
 }
 
+async function fetchRelatedArticles(currentId: string, categoryName: string): Promise<Array<{ id: string; title: string; categoryName: string; publishedAt?: string }>> {
+  const related: Array<{ id: string; title: string; categoryName: string; publishedAt?: string }> = [];
+  const seen = new Set<string>([currentId]);
+
+  // 1. Try Firestore REST first for published articles in this category or overall
+  try {
+    const url = `${FIRESTORE_BASE_URL}?pageSize=20`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
+    if (res.ok) {
+      const data = await res.json();
+      for (const doc of data.documents || []) {
+        const id = doc.name ? doc.name.split('/').pop() : undefined;
+        if (!id || seen.has(id)) continue;
+        const fields = doc.fields || {};
+        const status = fields.status?.stringValue || 'published';
+        if (status === 'published' || !fields.status) {
+          const cat = fields.categoryName?.stringValue || 'أخبار';
+          seen.add(id);
+          related.push({
+            id,
+            title: fields.title?.stringValue || 'خبر عاجل',
+            categoryName: cat,
+            publishedAt: fields.publishedAt?.stringValue || ''
+          });
+          if (related.length >= 4) break;
+        }
+      }
+    }
+  } catch {
+    // fallback to local
+  }
+
+  // 2. Fallback to local published articles
+  if (related.length < 4) {
+    for (const local of ARTICLES) {
+      if (!seen.has(local.id)) {
+        seen.add(local.id);
+        related.push({
+          id: local.id,
+          title: local.title,
+          categoryName: local.categoryName,
+          publishedAt: local.publishedAt
+        });
+        if (related.length >= 4) break;
+      }
+    }
+  }
+
+  return related.slice(0, 4);
+}
+
 function buildNotFoundResponse(message: string, isUnpublished = false): Response {
   const notFoundHtml = `<!doctype html>
 <html lang="ar" dir="rtl">
@@ -288,6 +342,23 @@ function buildNotFoundResponse(message: string, isUnpublished = false): Response
 }
 
 export default async function articleHandler(req: Request, context: Context): Promise<Response> {
+  // Normalize trailing slashes: e.g. /article/art-123/ -> /article/art-123 (301 Permanent Redirect)
+  try {
+    const rawPath = req.headers.get('x-forwarded-uri') || req.headers.get('x-original-url') || new URL(req.url).pathname;
+    if (rawPath.startsWith('/article/') && rawPath.endsWith('/') && rawPath.length > '/article/'.length) {
+      const cleanPath = rawPath.replace(/\/+$/, '');
+      return new Response(null, {
+        status: 301,
+        headers: {
+          'Location': cleanPath,
+          'Cache-Control': 'public, max-age=31536000'
+        }
+      });
+    }
+  } catch {
+    // ignore
+  }
+
   const articleId = extractArticleId(req, context);
 
   if (!articleId) {
@@ -434,6 +505,24 @@ export default async function articleHandler(req: Request, context: Context): Pr
           </figure>`
       : '';
 
+    const relatedList = await fetchRelatedArticles(art.id, art.categoryName);
+    const relatedHtml = relatedList.length > 0 ? `
+        <aside class="mt-8 pt-8 border-t border-slate-200">
+          <h2 class="text-lg font-bold text-slate-900 mb-4">قد يهمك أيضاً في هذا السياق</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            ${relatedList.map((rel) => `
+              <div class="border border-slate-200 rounded-lg p-4 bg-slate-50/50">
+                <span class="text-xs font-semibold text-sky-800 block mb-1">${escapeHtml(rel.categoryName)}</span>
+                <h3 class="text-sm font-bold text-slate-900 line-clamp-2">
+                  <a href="/article/${encodeURIComponent(rel.id)}" class="hover:text-sky-900 hover:underline">${escapeHtml(rel.title)}</a>
+                </h3>
+                <span class="text-xs text-slate-400 mt-2 block">${escapeHtml(rel.publishedAt || '')}</span>
+              </div>
+            `).join('\n')}
+          </div>
+        </aside>
+    ` : '';
+
     const ssrContent = `
     <div id="root">
       <header class="bg-white border-b border-slate-200">
@@ -449,7 +538,7 @@ export default async function articleHandler(req: Request, context: Context): Pr
         <nav class="text-xs text-sky-800 mb-4 flex items-center gap-2" aria-label="مسار التصفح">
           <a href="/" class="hover:underline">الرئيسية</a>
           <span>&gt;</span>
-          <span>${escapeHtml(art.categoryName || 'أخبار')}</span>
+          <a href="/#${encodeURIComponent(art.categoryName || 'news')}" class="hover:underline">${escapeHtml(art.categoryName || 'أخبار')}</a>
           <span>&gt;</span>
           <span class="text-slate-500 truncate max-w-xs">${escapeHtml(art.title)}</span>
         </nav>
@@ -471,6 +560,7 @@ export default async function articleHandler(req: Request, context: Context): Pr
           <div class="prose max-w-none text-slate-800 border-t border-slate-100 pt-6">
             ${paragraphsHtml}
           </div>
+          ${relatedHtml}
         </article>
       </main>
     </div>`;
