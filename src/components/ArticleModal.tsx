@@ -17,6 +17,8 @@ import {
 
 interface ArticleModalProps {
   article: Article | null;
+  isLoading?: boolean;
+  isNotFound?: boolean;
   onClose: () => void;
   onSelectArticle: (articleId: string) => void;
   relatedArticles: Article[];
@@ -24,6 +26,8 @@ interface ArticleModalProps {
 
 export const ArticleModal: React.FC<ArticleModalProps> = ({
   article,
+  isLoading = false,
+  isNotFound = false,
   onClose,
   onSelectArticle,
   relatedArticles,
@@ -32,7 +36,55 @@ export const ArticleModal: React.FC<ArticleModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
-  if (!article) return null;
+  if (!article && !isLoading && !isNotFound) return null;
+
+  if (isNotFound) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex justify-center p-4 animate-in fade-in duration-200">
+        <div className="bg-white text-slate-900 w-full max-w-lg rounded-xl shadow-2xl overflow-hidden my-auto border border-slate-200 p-8 text-center" dir="rtl">
+          <div className="text-4xl mb-4">📰</div>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">المقال غير متوفر</h2>
+          <p className="text-sm text-slate-600 mb-6 leading-relaxed">
+            عذراً، لم نتمكن من العثور على هذا الخبر. قد يكون تم نقله أو حذفه أو أن الرابط غير صحيح.
+          </p>
+          <button
+            onClick={onClose}
+            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-[#0f223d] text-white font-bold text-sm rounded-lg hover:bg-slate-800 transition-colors"
+          >
+            العودة إلى الصفحة الرئيسية
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading || !article) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-xs flex justify-center p-2 sm:p-4 md:p-6 animate-in fade-in duration-200">
+        <div className="bg-white text-slate-900 w-full max-w-4xl rounded-xl shadow-2xl overflow-hidden my-auto border border-slate-200 flex flex-col p-6 sm:p-10" dir="rtl">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+            <div className="h-6 bg-slate-200 rounded w-28 animate-pulse"></div>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              aria-label="إغلاق"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <div className="space-y-4 animate-pulse">
+            <div className="h-8 bg-slate-200 rounded w-3/4"></div>
+            <div className="h-5 bg-slate-100 rounded w-full"></div>
+            <div className="h-64 bg-slate-100 rounded-lg w-full my-6"></div>
+            <div className="h-4 bg-slate-200 rounded w-full"></div>
+            <div className="h-4 bg-slate-200 rounded w-5/6"></div>
+            <div className="h-4 bg-slate-200 rounded w-4/6"></div>
+          </div>
+          <p className="text-xs text-slate-400 text-center mt-6">جارٍ تحميل تفاصيل الخبر من نت نيوز...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleShare = () => {
     if (navigator.clipboard) {

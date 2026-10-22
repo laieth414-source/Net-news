@@ -9,6 +9,7 @@ export function updateDocumentSeo(options: {
   description: string;
   canonicalPath: string;
   type?: 'website' | 'article';
+  imageUrl?: string;
   publishedTime?: string;
   modifiedTime?: string;
   section?: string;
@@ -21,6 +22,7 @@ export function updateDocumentSeo(options: {
     description,
     canonicalPath,
     type = 'website',
+    imageUrl,
     publishedTime,
     modifiedTime,
     section,
@@ -41,13 +43,33 @@ export function updateDocumentSeo(options: {
     el.setAttribute('content', content);
   };
 
+  const removeMeta = (attr: 'name' | 'property', key: string) => {
+    const el = document.querySelector(`meta[${attr}="${key}"]`);
+    if (el) {
+      el.remove();
+    }
+  };
+
+  // Format canonical URL strictly
+  const cleanPath = canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`;
+  const canonicalUrl = cleanPath === '/' ? `${BASE_URL}/` : `${BASE_URL}${cleanPath}`;
+
   setMeta('name', 'description', description);
   setMeta('property', 'og:title', title);
   setMeta('property', 'og:description', description);
   setMeta('property', 'og:type', type);
-  setMeta('property', 'og:url', `${BASE_URL}${canonicalPath}`);
+  setMeta('property', 'og:url', canonicalUrl);
+  setMeta('name', 'twitter:card', 'summary_large_image');
   setMeta('name', 'twitter:title', title);
   setMeta('name', 'twitter:description', description);
+
+  if (imageUrl) {
+    setMeta('property', 'og:image', imageUrl);
+    setMeta('name', 'twitter:image', imageUrl);
+  } else {
+    removeMeta('property', 'og:image');
+    removeMeta('name', 'twitter:image');
+  }
 
   // 3. Canonical link
   let canonicalEl = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
@@ -56,7 +78,7 @@ export function updateDocumentSeo(options: {
     canonicalEl.setAttribute('rel', 'canonical');
     document.head.appendChild(canonicalEl);
   }
-  canonicalEl.setAttribute('href', `${BASE_URL}${canonicalPath}`);
+  canonicalEl.setAttribute('href', canonicalUrl);
 
   // 4. JSON-LD schema
   let scriptEl = document.getElementById('dynamic-jsonld') as HTMLScriptElement | null;
@@ -67,23 +89,25 @@ export function updateDocumentSeo(options: {
     document.head.appendChild(scriptEl);
   }
 
-  const fullUrl = `${BASE_URL}${canonicalPath}`;
-
   if (type === 'article') {
-    const jsonLd = {
+    const pubIso = publishedTime || new Date().toISOString();
+    const modIso = modifiedTime || pubIso;
+
+    const jsonLd: Record<string, any> = {
       '@context': 'https://schema.org',
       '@type': 'NewsArticle',
       'mainEntityOfPage': {
         '@type': 'WebPage',
-        '@id': fullUrl
+        '@id': canonicalUrl
       },
       'headline': title,
       'description': description,
       'articleSection': section || 'أخبار',
-      'datePublished': publishedTime || '2026-10-09T13:51:00Z',
-      'dateModified': modifiedTime || publishedTime || '2026-10-09T13:51:00Z',
+      'inLanguage': 'ar',
+      'datePublished': pubIso,
+      'dateModified': modIso,
       'author': {
-        '@type': 'Organization',
+        '@type': 'Person',
         'name': authorName
       },
       'publisher': {
@@ -96,6 +120,11 @@ export function updateDocumentSeo(options: {
         }
       }
     };
+
+    if (imageUrl) {
+      jsonLd.image = [imageUrl];
+    }
+
     scriptEl.textContent = JSON.stringify(jsonLd);
   } else {
     const jsonLd = {

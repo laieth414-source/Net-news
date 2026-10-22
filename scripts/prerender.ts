@@ -66,12 +66,12 @@ async function fetchFirestoreArticles(): Promise<RemoteArticle[]> {
       for (const doc of docs) {
         const id = doc.name ? doc.name.split('/').pop() : undefined;
         if (!id || seenIds.has(id)) continue;
+        seenIds.add(id);
 
         const fields = doc.fields || {};
         const status = fields.status?.stringValue || 'published';
 
         if (status === 'published' || !fields.status) {
-          seenIds.add(id);
           const rawContent = fields.content?.arrayValue?.values || [];
           const content = rawContent.map((v: any) => v.stringValue).filter(Boolean);
 

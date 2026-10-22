@@ -29,6 +29,7 @@ import {
 import { Article, BreakingNewsItem, CategoryId } from './types/news';
 import { AdminArticle, AdminBreakingNews, AdminCategory } from './types/admin';
 import {
+  db,
   subscribeToArticles,
   subscribeToBreakingNews,
   subscribeToCategories,
@@ -36,6 +37,7 @@ import {
   testConnection,
   listenToAuthState,
 } from './lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { User } from 'firebase/auth';
 import { AdminModal } from './components/AdminModal';
 import { AdminDashboard } from './components/admin/AdminDashboard';
@@ -89,12 +91,18 @@ export default function App() {
   const [staticPages, setStaticPages] = useState<Record<string, StaticPageDetail>>(STATIC_PAGES_DATA);
   const [isFirebaseConnected, setIsFirebaseConnected] = useState<boolean | null>(null);
   const [liveFirestoreCount, setLiveFirestoreCount] = useState<number>(0);
+  const [isLoadingArticle, setIsLoadingArticle] = useState<boolean>(false);
+  const [isArticleNotFound, setIsArticleNotFound] = useState<boolean>(false);
 
   // Select article with URL sync
   const handleSelectArticle = (id: string | null) => {
     setSelectedArticleId(id);
     if (id) {
       setSelectedPageSlug(null);
+      setIsArticleNotFound(false);
+    } else {
+      setIsArticleNotFound(false);
+      setIsLoadingArticle(false);
     }
     if (typeof window !== 'undefined') {
       if (id) {
@@ -238,6 +246,83 @@ export default function App() {
     return articles.find((a) => a.id === selectedArticleId) || null;
   }, [selectedArticleId, articles]);
 
+  // Directly fetch article from Firestore if user opens an article URL directly
+  useEffect(() => {
+    if (!selectedArticleId) {
+      setIsLoadingArticle(false);
+      setIsArticleNotFound(false);
+      return;
+    }
+
+    const found = articles.find((a) => a.id === selectedArticleId);
+    if (found) {
+      setIsLoadingArticle(false);
+      setIsArticleNotFound(false);
+      return;
+    }
+
+    let isCancelled = false;
+    setIsLoadingArticle(true);
+    setIsArticleNotFound(false);
+
+    getDoc(doc(db, 'articles', selectedArticleId))
+      .then((docSnap) => {
+        if (isCancelled) return;
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          const status = data.status || 'published';
+          if (status === 'published') {
+            const rawContent = Array.isArray(data.content) ? data.content : [data.deck || ''];
+            const newArt: Article = {
+              id: docSnap.id,
+              title: data.title || '',
+              deck: data.deck || '',
+              content: rawContent.filter((p: any) => typeof p === 'string' && p.trim().length > 0),
+              categoryId: data.categoryId || 'world',
+              categoryName: data.categoryName || 'العالم',
+              publishedAt: data.publishedAt || 'اليوم',
+              timestamp: data.timestamp || 'حديثاً',
+              source: data.source || 'نت نيوز',
+              sourceUrl: data.sourceUrl || '',
+              imageUrl: data.imageUrl || undefined,
+              status: data.status || 'published',
+              imageCaption: data.imageCaption || '',
+              readTime: data.readTime || '3 دقائق قراءة',
+              isLead: Boolean(data.isLead),
+              isSecondary: Boolean(data.isSecondary),
+              isMostRead: Boolean(data.isMostRead),
+              viewsCount: data.viewsCount || '0 قراءة',
+              tags: Array.isArray(data.tags) ? data.tags : [],
+              keyPoints: Array.isArray(data.keyPoints) ? data.keyPoints : [],
+              author: data.author || undefined,
+              createdAt: data.createdAt,
+              updatedAt: data.updatedAt,
+            };
+
+            setArticles((prev) => {
+              if (prev.some((a) => a.id === newArt.id)) return prev;
+              return [newArt, ...prev];
+            });
+            setIsLoadingArticle(false);
+            setIsArticleNotFound(false);
+            return;
+          }
+        }
+        setIsLoadingArticle(false);
+        setIsArticleNotFound(true);
+      })
+      .catch((err) => {
+        if (isCancelled) return;
+        console.warn('Notice: Error fetching article directly:', err);
+        setIsLoadingArticle(false);
+        setIsArticleNotFound(true);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [selectedArticleId, articles]);
+
   // Real-time visitor analytics tracking & dynamic SEO meta updates
   useEffect(() => {
     if (viewMode === 'site') {
@@ -253,17 +338,45 @@ export default function App() {
         });
         trackPageView(`/page/${selectedPageSlug}`, `${page?.title || 'صفحة'} - NET NEWS`);
       } else if (selectedArticleId && selectedArticle) {
-        const articleTitle = `${selectedArticle.title} | NET NEWS`;
+        const articleTitle = `${selectedArticle.title} | NET NEWS | نت نيوز`;
         const articleDesc = selectedArticle.deck || (Array.isArray(selectedArticle.content) ? selectedArticle.content[0] : '') || 'بوابة إخبارية عربية رصينة';
+
+        const getIsoTime = (val: any) => {
+          if (!val) return new Date().toISOString();
+          if (val.toMillis) return new Date(val.toMillis()).toISOString();
+          if (val.seconds) return new Date(val.seconds * 1000).toISOString();
+          if (typeof val === 'string') {
+            const d = new Date(val);
+            if (!isNaN(d.getTime())) return d.toISOString();
+          }
+          return new Date().toISOString();
+        };
+
+        const pubTime = getIsoTime(selectedArticle.createdAt);
+        const modTime = getIsoTime(selectedArticle.updatedAt || selectedArticle.createdAt);
+        const authorName = (typeof selectedArticle.author === 'object' ? selectedArticle.author?.name : selectedArticle.author) || selectedArticle.source || 'نت نيوز';
+
         updateDocumentSeo({
           title: articleTitle,
           description: articleDesc,
-          canonicalPath: `/article/${selectedArticleId}`,
+          canonicalPath: `/article/${encodeURIComponent(selectedArticleId)}`,
           type: 'article',
+          imageUrl: selectedArticle.imageUrl,
           section: selectedArticle.categoryName,
-          authorName: selectedArticle.source || 'نت نيوز'
+          authorName,
+          publishedTime: pubTime,
+          modifiedTime: modTime,
         });
         trackPageView(`/article/${selectedArticleId}`, selectedArticle.title);
+      } else if (selectedArticleId && isArticleNotFound) {
+        updateDocumentSeo({
+          title: 'المقال غير متوفر | NET NEWS | نت نيوز',
+          description: 'عذراً، لم نتمكن من العثور على هذا الخبر. ربما تم نقله أو حذفه.',
+          canonicalPath: `/article/${encodeURIComponent(selectedArticleId)}`,
+          type: 'website'
+        });
+      } else if (selectedArticleId && isLoadingArticle) {
+        // While fetching, preserve server prerendered head tags and do not overwrite with homepage
       } else if (activeCategory && activeCategory !== 'all') {
         const catObj = categories.find((c) => c.id === activeCategory);
         const catName = catObj?.name || activeCategory;
@@ -286,7 +399,7 @@ export default function App() {
         trackPageView('/', 'الرئيسية - NET NEWS');
       }
     }
-  }, [viewMode, selectedPageSlug, selectedArticleId, selectedArticle, activeCategory, categories]);
+  }, [viewMode, selectedPageSlug, selectedArticleId, selectedArticle, isArticleNotFound, isLoadingArticle, activeCategory, categories]);
 
   // Real-time active presence heartbeat
   useEffect(() => {
@@ -609,6 +722,8 @@ export default function App() {
       {/* Article Reader Modal */}
       <ArticleModal
         article={selectedArticle}
+        isLoading={isLoadingArticle}
+        isNotFound={isArticleNotFound}
         onClose={() => handleSelectArticle(null)}
         onSelectArticle={handleSelectArticle}
         relatedArticles={relatedArticles}

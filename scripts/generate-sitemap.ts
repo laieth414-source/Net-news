@@ -42,13 +42,13 @@ async function fetchFirestoreArticles(): Promise<ArticleEntry[]> {
       for (const doc of docs) {
         const id = doc.name ? doc.name.split('/').pop() : undefined;
         if (!id || seenIds.has(id)) continue;
+        seenIds.add(id);
 
         const fields = doc.fields || {};
         const status = fields.status?.stringValue || 'published';
 
         // Only include published articles (or default published)
         if (status === 'published' || !fields.status) {
-          seenIds.add(id);
           const updateTime =
             fields.updatedAt?.timestampValue ||
             doc.updateTime ||

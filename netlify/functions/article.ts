@@ -48,9 +48,9 @@ async function getBaseHtml(): Promise<string> {
   const currentDir = getCurrentDir();
 
   const candidatePaths = [
-    path.resolve(process.cwd(), 'dist/index.html'),
     path.join(currentDir, 'base-index.html'),
     path.resolve(process.cwd(), 'netlify/functions/base-index.html'),
+    path.resolve(process.cwd(), 'dist/index.html'),
     path.join(currentDir, 'index.html'),
     path.resolve(process.cwd(), 'index.html')
   ];
@@ -59,7 +59,7 @@ async function getBaseHtml(): Promise<string> {
     try {
       if (fs.existsSync(p)) {
         const content = fs.readFileSync(p, 'utf-8');
-        if (content && content.includes('<div id="root">')) {
+        if (content && content.includes('id="root"')) {
           cachedBaseHtml = content;
           return cachedBaseHtml;
         }
@@ -80,7 +80,7 @@ async function getBaseHtml(): Promise<string> {
     clearTimeout(timeout);
     if (res.ok) {
       const text = await res.text();
-      if (text && text.includes('<div id="root">')) {
+      if (text && text.includes('id="root"')) {
         cachedBaseHtml = text;
         return cachedBaseHtml;
       }
@@ -128,19 +128,70 @@ interface ArticleData {
   updatedAt: string;
 }
 
+function cleanId(raw?: string | null): string | null {
+  if (!raw) return null;
+  let val = decodeURIComponent(raw.trim());
+  val = val.replace(/^\/+|\/+$/g, '');
+  val = val.replace(/^article\//, '');
+  val = val.replace(/^functions\//, '');
+  val = val.replace(/\.html$/, '');
+  if (!val || val === 'article' || val === 'functions') return null;
+  return val;
+}
+
 function extractArticleId(req: Request, context: Context): string | null {
+  // 1. Context params (Netlify router / edge)
   if (context.params?.id) {
-    return context.params.id;
+    const cleaned = cleanId(context.params.id);
+    if (cleaned) return cleaned;
   }
+  if (context.params?.splat) {
+    const cleaned = cleanId(context.params.splat);
+    if (cleaned) return cleaned;
+  }
+  const wildcard = (context.params as any)?.['*'];
+  if (wildcard) {
+    const cleaned = cleanId(wildcard);
+    if (cleaned) return cleaned;
+  }
+
   try {
     const url = new URL(req.url);
-    const queryId = url.searchParams.get('id');
-    if (queryId) return queryId;
+    const queryId = url.searchParams.get('id') || url.searchParams.get('splat') || url.searchParams.get('slug');
+    if (queryId) {
+      const cleaned = cleanId(queryId);
+      if (cleaned) return cleaned;
+    }
+
+    // 2. Netlify forwarding headers
+    const forwardedUri = req.headers.get('x-forwarded-uri') || req.headers.get('x-original-url') || req.headers.get('x-nf-original-path');
+    if (forwardedUri) {
+      const match = forwardedUri.match(/\/article\/([^/?#]+)/i);
+      if (match && match[1]) {
+        const cleaned = cleanId(match[1]);
+        if (cleaned) return cleaned;
+      }
+    }
+
+    // 3. Direct URL pathname: /article/:id
+    const match = url.pathname.match(/\/article\/([^/?#]+)/i);
+    if (match && match[1]) {
+      const cleaned = cleanId(match[1]);
+      if (cleaned) return cleaned;
+    }
+
+    // 4. Rewritten function pathname: /.netlify/functions/article/:id
+    const fnMatch = url.pathname.match(/\/\.netlify\/functions\/article\/([^/?#]+)/i);
+    if (fnMatch && fnMatch[1]) {
+      const cleaned = cleanId(fnMatch[1]);
+      if (cleaned) return cleaned;
+    }
 
     const segments = url.pathname.split('/').filter(Boolean);
     const last = segments[segments.length - 1];
-    if (last && last !== 'article' && last !== 'functions') {
-      return decodeURIComponent(last);
+    if (last) {
+      const cleaned = cleanId(last);
+      if (cleaned) return cleaned;
     }
   } catch {
     // ignore
@@ -342,28 +393,23 @@ function buildNotFoundResponse(message: string, isUnpublished = false): Response
 }
 
 export default async function articleHandler(req: Request, context: Context): Promise<Response> {
-  // Normalize trailing slashes: e.g. /article/art-123/ -> /article/art-123 (301 Permanent Redirect)
-  try {
-    const rawPath = req.headers.get('x-forwarded-uri') || req.headers.get('x-original-url') || new URL(req.url).pathname;
-    if (rawPath.startsWith('/article/') && rawPath.endsWith('/') && rawPath.length > '/article/'.length) {
-      const cleanPath = rawPath.replace(/\/+$/, '');
-      return new Response(null, {
-        status: 301,
-        headers: {
-          'Location': cleanPath,
-          'Cache-Control': 'public, max-age=31536000'
-        }
-      });
-    }
-  } catch {
-    // ignore
-  }
-
+  const rawPath = req.headers.get('x-forwarded-uri') || req.headers.get('x-original-url') || req.headers.get('x-nf-original-path') || new URL(req.url).pathname;
   const articleId = extractArticleId(req, context);
+
+  // Normalize trailing slashes: e.g. /article/art-123/ -> /article/art-123 (301 Permanent Redirect)
+  if (articleId && rawPath.includes('/article/') && rawPath.endsWith('/')) {
+    return new Response(null, {
+      status: 301,
+      headers: {
+        'Location': `/article/${encodeURIComponent(articleId)}`,
+        'Cache-Control': 'public, max-age=31536000'
+      }
+    });
+  }
 
   if (!articleId) {
     return new Response(null, {
-      status: 302,
+      status: 301,
       headers: {
         'Location': '/'
       }
@@ -565,7 +611,13 @@ export default async function articleHandler(req: Request, context: Context): Pr
       </main>
     </div>`;
 
-    html = html.replace(/<div id="root"><\/div>/, ssrContent);
+    if (html.includes('<div id="root">')) {
+      html = html.replace(/<div id="root">[\s\S]*?<\/div>/, ssrContent);
+    } else if (html.includes('id="root"')) {
+      html = html.replace(/<div[^>]*id="root"[^>]*>[\s\S]*?<\/div>/, ssrContent);
+    } else {
+      html = html.replace('</body>', `${ssrContent}\n</body>`);
+    }
 
     return new Response(html, {
       status: 200,
