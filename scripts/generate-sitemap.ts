@@ -162,7 +162,7 @@ Sitemap: ${BASE_URL}/sitemap.xml
 /sitemap_index.xml /sitemap.xml                        301!
 /sitemap.xml       /.netlify/functions/sitemap         200!
 /article/*         /.netlify/functions/article/:splat  200!
-/page/:slug/       /page/:slug                         301!
+/page/*            /.netlify/functions/page/:splat     200!
 /*                 /index.html                         200
 `;
 

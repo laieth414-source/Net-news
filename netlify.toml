@@ -31,9 +31,9 @@
   force = true
 
 [[redirects]]
-  from = "/page/:slug/"
-  to = "/page/:slug"
-  status = 301
+  from = "/page/*"
+  to = "/.netlify/functions/page/:splat"
+  status = 200
   force = true
 
 [[redirects]]

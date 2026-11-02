@@ -429,9 +429,11 @@ export default async function articleHandler(req: Request, context: Context): Pr
 
     const canonicalUrl = `${BASE_URL}/article/${encodeURIComponent(art.id)}`;
     const pageTitle = `${art.title} | NET NEWS | نت نيوز`;
-    const description = art.deck || art.paragraphs[0] || 'بوابة إخبارية عربية رصينة تقدم تغطية متكاملة للأحداث.';
+    const rawDesc = art.deck || art.paragraphs[0] || 'بوابة إخبارية عربية رصينة تقدم تغطية متكاملة للأحداث.';
+    const description = rawDesc.replace(/\s+/g, ' ').trim();
     const publishedIso = toIsoDate(art.createdAt);
     const modifiedIso = toIsoDate(art.updatedAt || art.createdAt);
+    const effectiveImageUrl = art.imageUrl || `${BASE_URL}/og-image.png`;
 
     // Schema.org NewsArticle
     const jsonLd: Record<string, any> = {
@@ -457,14 +459,11 @@ export default async function articleHandler(req: Request, context: Context): Pr
         'url': BASE_URL,
         'logo': {
           '@type': 'ImageObject',
-          'url': `${BASE_URL}/favicon.ico`
+          'url': `${BASE_URL}/logo.png`
         }
-      }
+      },
+      'image': [effectiveImageUrl]
     };
-
-    if (art.imageUrl) {
-      jsonLd.image = [art.imageUrl];
-    }
 
     const baseHtml = await getBaseHtml();
     let html = baseHtml;
@@ -479,14 +478,21 @@ export default async function articleHandler(req: Request, context: Context): Pr
       html = html.replace('</head>', `    <link rel="canonical" href="${canonicalUrl}" />\n  </head>`);
     }
 
-    // 3. Meta description
+    // 3. Robots meta tag for Googlebot and search crawlers
+    if (html.includes('name="robots"')) {
+      html = html.replace(/<meta name="robots"[^>]*>/i, `<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />`);
+    } else {
+      html = html.replace('</head>', `    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />\n  </head>`);
+    }
+
+    // 4. Meta description
     if (html.includes('name="description"')) {
       html = html.replace(/<meta name="description"[^>]*>/i, `<meta name="description" content="${escapeHtml(description)}" />`);
     } else {
       html = html.replace('</head>', `    <meta name="description" content="${escapeHtml(description)}" />\n  </head>`);
     }
 
-    // 4. Open Graph meta tags
+    // 5. Open Graph meta tags
     if (html.includes('property="og:title"')) {
       html = html.replace(/<meta property="og:title"[^>]*>/i, `<meta property="og:title" content="${escapeHtml(pageTitle)}" />`);
     } else {
@@ -505,15 +511,13 @@ export default async function articleHandler(req: Request, context: Context): Pr
       html = html.replace('</head>', `    <meta property="og:type" content="article" />\n    <meta property="og:url" content="${canonicalUrl}" />\n  </head>`);
     }
 
-    if (art.imageUrl) {
-      if (html.includes('property="og:image"')) {
-        html = html.replace(/<meta property="og:image"[^>]*>/i, `<meta property="og:image" content="${escapeHtml(art.imageUrl)}" />`);
-      } else {
-        html = html.replace('</head>', `    <meta property="og:image" content="${escapeHtml(art.imageUrl)}" />\n  </head>`);
-      }
+    if (html.includes('property="og:image"')) {
+      html = html.replace(/<meta property="og:image"[^>]*>/i, `<meta property="og:image" content="${escapeHtml(effectiveImageUrl)}" />`);
+    } else {
+      html = html.replace('</head>', `    <meta property="og:image" content="${escapeHtml(effectiveImageUrl)}" />\n  </head>`);
     }
 
-    // 5. Twitter cards
+    // 6. Twitter cards
     if (html.includes('name="twitter:title"')) {
       html = html.replace(/<meta name="twitter:title"[^>]*>/i, `<meta name="twitter:title" content="${escapeHtml(pageTitle)}" />`);
     } else {
@@ -526,15 +530,13 @@ export default async function articleHandler(req: Request, context: Context): Pr
       html = html.replace('</head>', `    <meta name="twitter:description" content="${escapeHtml(description)}" />\n  </head>`);
     }
 
-    if (art.imageUrl) {
-      if (html.includes('name="twitter:image"')) {
-        html = html.replace(/<meta name="twitter:image"[^>]*>/i, `<meta name="twitter:image" content="${escapeHtml(art.imageUrl)}" />`);
-      } else {
-        html = html.replace('</head>', `    <meta name="twitter:image" content="${escapeHtml(art.imageUrl)}" />\n  </head>`);
-      }
+    if (html.includes('name="twitter:image"')) {
+      html = html.replace(/<meta name="twitter:image"[^>]*>/i, `<meta name="twitter:image" content="${escapeHtml(effectiveImageUrl)}" />`);
+    } else {
+      html = html.replace('</head>', `    <meta name="twitter:image" content="${escapeHtml(effectiveImageUrl)}" />\n  </head>`);
     }
 
-    // 6. Inject Schema.org JSON-LD
+    // 7. Inject Schema.org JSON-LD
     const jsonLdTag = `    <script type="application/ld+json">\n${JSON.stringify(jsonLd, null, 2)}\n    </script>\n`;
     html = html.replace('</head>', `${jsonLdTag}  </head>`);
 

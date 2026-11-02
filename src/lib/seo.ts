@@ -54,22 +54,18 @@ export function updateDocumentSeo(options: {
   const cleanPath = canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`;
   const canonicalUrl = cleanPath === '/' ? `${BASE_URL}/` : `${BASE_URL}${cleanPath}`;
 
-  setMeta('name', 'description', description);
+  setMeta('name', 'robots', 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
+  const effectiveImageUrl = imageUrl || `${BASE_URL}/og-image.png`;
+  setMeta('name', 'description', description.replace(/\s+/g, ' ').trim());
   setMeta('property', 'og:title', title);
-  setMeta('property', 'og:description', description);
+  setMeta('property', 'og:description', description.replace(/\s+/g, ' ').trim());
   setMeta('property', 'og:type', type);
   setMeta('property', 'og:url', canonicalUrl);
+  setMeta('property', 'og:image', effectiveImageUrl);
   setMeta('name', 'twitter:card', 'summary_large_image');
   setMeta('name', 'twitter:title', title);
-  setMeta('name', 'twitter:description', description);
-
-  if (imageUrl) {
-    setMeta('property', 'og:image', imageUrl);
-    setMeta('name', 'twitter:image', imageUrl);
-  } else {
-    removeMeta('property', 'og:image');
-    removeMeta('name', 'twitter:image');
-  }
+  setMeta('name', 'twitter:description', description.replace(/\s+/g, ' ').trim());
+  setMeta('name', 'twitter:image', effectiveImageUrl);
 
   // 3. Canonical link
   let canonicalEl = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
@@ -101,7 +97,7 @@ export function updateDocumentSeo(options: {
         '@id': canonicalUrl
       },
       'headline': title,
-      'description': description,
+      'description': description.replace(/\s+/g, ' ').trim(),
       'articleSection': section || 'أخبار',
       'inLanguage': 'ar',
       'datePublished': pubIso,
@@ -116,14 +112,11 @@ export function updateDocumentSeo(options: {
         'url': BASE_URL,
         'logo': {
           '@type': 'ImageObject',
-          'url': `${BASE_URL}/favicon.ico`
+          'url': `${BASE_URL}/logo.png`
         }
-      }
+      },
+      'image': [effectiveImageUrl]
     };
-
-    if (imageUrl) {
-      jsonLd.image = [imageUrl];
-    }
 
     scriptEl.textContent = JSON.stringify(jsonLd);
   } else {

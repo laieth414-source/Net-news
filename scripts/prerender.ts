@@ -301,16 +301,11 @@ export async function prerenderPrerenderedRoutes() {
 
     prerendered = prerendered.replace(/<div id="root"><\/div>/, ssrContent);
 
-    // Write file to dist/article/${id}/index.html and dist/article/${id}.html
+    // Write file to dist/article/${id}.html
     const articlesDir = path.join(distDir, 'article');
     if (!fs.existsSync(articlesDir)) {
       fs.mkdirSync(articlesDir, { recursive: true });
     }
-    const targetDir = path.join(articlesDir, id);
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
-    }
-    fs.writeFileSync(path.join(targetDir, 'index.html'), prerendered, 'utf-8');
     fs.writeFileSync(path.join(articlesDir, `${id}.html`), prerendered, 'utf-8');
   }
 
@@ -361,17 +356,11 @@ export async function prerenderPrerenderedRoutes() {
 
     prerendered = prerendered.replace(/<div id="root"><\/div>/, ssrContent);
 
-    // Write both dist/page/${slug}/index.html and dist/page/${slug}.html
-    // This allows web servers to serve /page/${slug} directly without trailing slash 301 redirects
+    // Write dist/page/${slug}.html
     const pagesDir = path.join(distDir, 'page');
     if (!fs.existsSync(pagesDir)) {
       fs.mkdirSync(pagesDir, { recursive: true });
     }
-    const targetDir = path.join(pagesDir, slug);
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
-    }
-    fs.writeFileSync(path.join(targetDir, 'index.html'), prerendered, 'utf-8');
     fs.writeFileSync(path.join(pagesDir, `${slug}.html`), prerendered, 'utf-8');
   }
 
