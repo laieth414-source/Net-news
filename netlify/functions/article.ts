@@ -393,25 +393,14 @@ function buildNotFoundResponse(message: string, isUnpublished = false): Response
 }
 
 export default async function articleHandler(req: Request, context: Context): Promise<Response> {
-  const rawPath = req.headers.get('x-forwarded-uri') || req.headers.get('x-original-url') || req.headers.get('x-nf-original-path') || new URL(req.url).pathname;
   const articleId = extractArticleId(req, context);
-
-  // Normalize trailing slashes: e.g. /article/art-123/ -> /article/art-123 (301 Permanent Redirect)
-  if (articleId && rawPath.includes('/article/') && rawPath.endsWith('/')) {
-    return new Response(null, {
-      status: 301,
-      headers: {
-        'Location': `/article/${encodeURIComponent(articleId)}`,
-        'Cache-Control': 'public, max-age=31536000'
-      }
-    });
-  }
 
   if (!articleId) {
     return new Response(null, {
-      status: 301,
+      status: 302,
       headers: {
-        'Location': '/'
+        'Location': '/',
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
       }
     });
   }
