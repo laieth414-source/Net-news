@@ -390,6 +390,15 @@ export const AdminArticlesView: React.FC<AdminArticlesViewProps> = ({
                       >
                         <Eye size={14} />
                       </button>
+                      <a
+                        href={`/article/${encodeURIComponent(art.id)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="معاينة نسخة محركات البحث المباشرة (SSR)"
+                        className="p-1.5 rounded-lg bg-emerald-950 hover:bg-emerald-900 text-emerald-400 hover:text-emerald-300 transition-colors inline-flex items-center"
+                      >
+                        <ExternalLink size={14} />
+                      </a>
                       <button
                         onClick={() => handleOpenEdit(art)}
                         title="تعديل المقال"

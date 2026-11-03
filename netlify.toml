@@ -49,9 +49,23 @@
   force = true
 
 [[redirects]]
+  from = "/"
+  to = "/.netlify/functions/home"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+[[headers]]
+  for = "/"
+  [headers.values]
+    Content-Type = "text/html; charset=utf-8"
+    X-Robots-Tag = "all, index, follow"
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Access-Control-Allow-Origin = "*"
 
 [[headers]]
   for = "/news-sitemap.xml"

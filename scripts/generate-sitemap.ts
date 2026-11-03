@@ -212,10 +212,17 @@ Sitemap: ${BASE_URL}/news-sitemap.xml
 /sitemap-news.xml  /.netlify/functions/news-sitemap    200!
 /article/*         /.netlify/functions/article/:splat  200!
 /page/*            /.netlify/functions/page/:splat     200!
+/                  /.netlify/functions/home            200!
 /*                 /index.html                         200
 `;
 
-  const headersContent = `/sitemap.xml
+  const headersContent = `/
+  Content-Type: text/html; charset=utf-8
+  X-Robots-Tag: all, index, follow
+  Cache-Control: public, max-age=0, must-revalidate
+  Access-Control-Allow-Origin: *
+
+/sitemap.xml
   Content-Type: application/xml; charset=utf-8
   X-Robots-Tag: all
   Cache-Control: public, max-age=0, must-revalidate

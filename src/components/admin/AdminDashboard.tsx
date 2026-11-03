@@ -674,6 +674,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 enableStructuredData: true,
                 keywords: ['أخبار عربية', 'نت نيوز', 'عاجل', 'الشرق الأوسط', 'اقتصاد'],
               }}
+              articles={articles}
               onSaveSeo={handleSaveSeo}
             />
           )}

@@ -7,4 +7,5 @@
 /sitemap-news.xml  /.netlify/functions/news-sitemap    200!
 /article/*         /.netlify/functions/article/:splat  200!
 /page/*            /.netlify/functions/page/:splat     200!
+/                  /.netlify/functions/home            200!
 /*                 /index.html                         200
