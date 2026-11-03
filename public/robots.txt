@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://netnews1-new.netlify.app/sitemap.xml
+Sitemap: https://netnews1-new.netlify.app/news-sitemap.xml

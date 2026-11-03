@@ -14,6 +14,13 @@ export const CATEGORIES: Category[] = [
 
 export const BREAKING_NEWS: BreakingNewsItem[] = [
   {
+    id: 'brk-fastpublish',
+    text: 'عاجل: نت نيوز تدشن رسمياً نظام النشر فائق السرعة لدعم الفهرسة اللحظية عبر Google News ومحركات البحث',
+    time: 'منذ دقيقة',
+    category: 'عاجل',
+    articleId: 'art-fastpublish-test-2026',
+  },
+  {
     id: 'brk-1',
     text: 'بيان مشترك في ختام قمة الرياض للتنمية المستدامة يدعو لتسريع التحول الطاقي العادل وحماية سلاسل الإمداد العالمية',
     time: 'منذ 8 دقائق',
@@ -64,6 +71,35 @@ export const WEATHER_DATA: WeatherReport[] = [
 ];
 
 export const ARTICLES: Article[] = [
+  // Fast Publishing Test Article (Current Timestamp)
+  {
+    id: 'art-fastpublish-test-2026',
+    title: 'نت نيوز تطلق نظام النشر فائق السرعة لدعم الفهرسة اللحظية في محركات البحث 2026',
+    deck: 'تدشين منظومة برمجية متطورة تدمج العرض المسبق التلقائي وخريطة أخبار Google News الفورية لتعزيز سرعة وصول القراء للأحداث العاجلة.',
+    content: [
+      'أعلنت منصة NET NEWS (نت نيوز) رسمياً اليوم عن تشغيل نظامها التحريري والتقني المحدّث، والمصمم لتسريع اكتشاف وتدقيق ونشر التقارير الإخبارية على مدار الساعة وفق أعلى معايير الصحافة الرقمية.',
+      'ويتيح النظام الجديد ربط كل خبر يتم نشره بصورة لحظية بخريطة أخبار Google News الرسمية، مع توليد ترويسات العرض المسبق (SSR) والبيانات المنظمة NewsArticle تلقائياً، ما يضمن قراءة وفهرسة فورية من قِبل روبوتات البحث دون تأخير.',
+      'كما يرتبط النظام تلقائياً بشريط الأخبار العاجلة على الصفحة الرئيسية، ليوفر تجربة تصفح متكاملة وسلسة لملايين القراء في الوطن العربي والخليج والعالم.'
+    ],
+    categoryId: 'tech',
+    categoryName: 'تقنية وابتكار',
+    publishedAt: new Date().toISOString(),
+    timestamp: 'منذ دقيقة',
+    source: 'نت نيوز | مكتب التقنية الرقمية',
+    author: {
+      name: 'هيئة تحرير نت نيوز',
+      role: 'فريق التحرير والتقنية'
+    },
+    imageUrl: 'https://netnews1-new.netlify.app/og-image.png',
+    imageCaption: 'غرفة الأخبار والبث الرقمي فائق السرعة في شبكة NET NEWS.',
+    readTime: '2 دقيقة قراءة',
+    isLead: false,
+    isSecondary: true,
+    isBreaking: true,
+    status: 'published',
+    viewsCount: '150 قراءة',
+    tags: ['أخبار عاجلة', 'نت نيوز', 'صحافة رقمية', 'تكنولوجيا']
+  },
   // Lead News
   {
     id: 'lead-1',

@@ -7,7 +7,18 @@ const FIRESTORE_BASE_URL = 'https://firestore.googleapis.com/v1/projects/netnews
 
 interface ArticleEntry {
   id: string;
+  title?: string;
   updatedAt?: string;
+}
+
+function escapeXml(text?: string): string {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
 async function fetchFirestoreArticles(): Promise<ArticleEntry[]> {
@@ -58,6 +69,7 @@ async function fetchFirestoreArticles(): Promise<ArticleEntry[]> {
 
           list.push({
             id,
+            title: fields.title?.stringValue || 'خبر عاجل من نت نيوز',
             updatedAt: updateTime,
           });
         }
@@ -150,10 +162,45 @@ ${urls.join('\n')}
 </urlset>
 `;
 
+  // 4. Google News Sitemap (last 48 hours, or top 10 recent)
+  const now = Date.now();
+  const FORTY_EIGHT_HOURS = 48 * 60 * 60 * 1000;
+  const newsEntries = articles
+    .map(a => {
+      const d = a.updatedAt ? new Date(a.updatedAt) : new Date();
+      const ms = !isNaN(d.getTime()) ? d.getTime() : now;
+      const iso = !isNaN(d.getTime()) ? d.toISOString() : new Date().toISOString();
+      return { id: a.id, title: a.title || 'خبر عاجل من نت نيوز', iso, ms };
+    })
+    .sort((a, b) => b.ms - a.ms);
+
+  let recentNews = newsEntries.filter(a => now - a.ms <= FORTY_EIGHT_HOURS);
+  if (recentNews.length === 0 && newsEntries.length > 0) {
+    recentNews = newsEntries.slice(0, 10).map(a => ({ ...a, iso: new Date().toISOString() }));
+  }
+
+  const newsSitemapContent = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+${recentNews.map(art => `  <url>
+    <loc>${BASE_URL}/article/${encodeURIComponent(art.id)}</loc>
+    <news:news>
+      <news:publication>
+        <news:name>NET NEWS | نت نيوز</news:name>
+        <news:language>ar</news:language>
+      </news:publication>
+      <news:publication_date>${art.iso}</news:publication_date>
+      <news:title>${escapeXml(art.title)}</news:title>
+    </news:news>
+  </url>`).join('\n')}
+</urlset>
+`;
+
   const robotsContent = `User-agent: *
 Allow: /
 
 Sitemap: ${BASE_URL}/sitemap.xml
+Sitemap: ${BASE_URL}/news-sitemap.xml
 `;
 
   const redirectsContent = `/https:*           /sitemap.xml                        301!
@@ -161,12 +208,26 @@ Sitemap: ${BASE_URL}/sitemap.xml
 /sitemap           /sitemap.xml                        301!
 /sitemap_index.xml /sitemap.xml                        301!
 /sitemap.xml       /.netlify/functions/sitemap         200!
+/news-sitemap.xml  /.netlify/functions/news-sitemap    200!
+/sitemap-news.xml  /.netlify/functions/news-sitemap    200!
 /article/*         /.netlify/functions/article/:splat  200!
 /page/*            /.netlify/functions/page/:splat     200!
 /*                 /index.html                         200
 `;
 
   const headersContent = `/sitemap.xml
+  Content-Type: application/xml; charset=utf-8
+  X-Robots-Tag: all
+  Cache-Control: public, max-age=0, must-revalidate
+  Access-Control-Allow-Origin: *
+
+/news-sitemap.xml
+  Content-Type: application/xml; charset=utf-8
+  X-Robots-Tag: all
+  Cache-Control: public, max-age=0, must-revalidate
+  Access-Control-Allow-Origin: *
+
+/sitemap-news.xml
   Content-Type: application/xml; charset=utf-8
   X-Robots-Tag: all
   Cache-Control: public, max-age=0, must-revalidate
@@ -198,6 +259,7 @@ Sitemap: ${BASE_URL}/sitemap.xml
   }
 
   fs.writeFileSync(path.join(publicDir, 'sitemap.xml'), sitemapContent, 'utf-8');
+  fs.writeFileSync(path.join(publicDir, 'news-sitemap.xml'), newsSitemapContent, 'utf-8');
   fs.writeFileSync(path.join(publicDir, 'robots.txt'), robotsContent, 'utf-8');
   fs.writeFileSync(path.join(publicDir, '_redirects'), redirectsContent, 'utf-8');
   fs.writeFileSync(path.join(publicDir, '_headers'), headersContent, 'utf-8');
@@ -206,12 +268,13 @@ Sitemap: ${BASE_URL}/sitemap.xml
   const distDir = path.resolve(process.cwd(), 'dist');
   if (fs.existsSync(distDir)) {
     fs.writeFileSync(path.join(distDir, 'sitemap.xml'), sitemapContent, 'utf-8');
+    fs.writeFileSync(path.join(distDir, 'news-sitemap.xml'), newsSitemapContent, 'utf-8');
     fs.writeFileSync(path.join(distDir, 'robots.txt'), robotsContent, 'utf-8');
     fs.writeFileSync(path.join(distDir, '_redirects'), redirectsContent, 'utf-8');
     fs.writeFileSync(path.join(distDir, '_headers'), headersContent, 'utf-8');
   }
 
-  console.log(`Generated sitemap.xml with ${urls.length} URLs in public/ and dist/`);
+  console.log(`Generated sitemap.xml (${urls.length} URLs) and news-sitemap.xml (${recentNews.length} news items) in public/ and dist/`);
 }
 
 generate().catch(err => {

@@ -25,6 +25,18 @@
   force = true
 
 [[redirects]]
+  from = "/news-sitemap.xml"
+  to = "/.netlify/functions/news-sitemap"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/sitemap-news.xml"
+  to = "/.netlify/functions/news-sitemap"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/article/*"
   to = "/.netlify/functions/article/:splat"
   status = 200
@@ -40,6 +52,22 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+[[headers]]
+  for = "/news-sitemap.xml"
+  [headers.values]
+    Content-Type = "application/xml; charset=utf-8"
+    X-Robots-Tag = "all"
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Access-Control-Allow-Origin = "*"
+
+[[headers]]
+  for = "/sitemap-news.xml"
+  [headers.values]
+    Content-Type = "application/xml; charset=utf-8"
+    X-Robots-Tag = "all"
+    Cache-Control = "public, max-age=0, must-revalidate"
+    Access-Control-Allow-Origin = "*"
 
 [[headers]]
   for = "/sitemap.xml"

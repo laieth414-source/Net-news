@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+  <url>
+    <loc>https://netnews1-new.netlify.app/article/art-fastpublish-test-2026</loc>
+    <news:news>
+      <news:publication>
+        <news:name>NET NEWS | نت نيوز</news:name>
+        <news:language>ar</news:language>
+      </news:publication>
+      <news:publication_date>2026-11-03T11:46:07.815Z</news:publication_date>
+      <news:title>خبر عاجل من نت نيوز</news:title>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://netnews1-new.netlify.app/article/art-1793628097149</loc>
+    <news:news>
+      <news:publication>
+        <news:name>NET NEWS | نت نيوز</news:name>
+        <news:language>ar</news:language>
+      </news:publication>
+      <news:publication_date>2026-11-02T14:01:37.711Z</news:publication_date>
+      <news:title>كارثة جوية في فلوريدا.. تحطم طائرة خاصة يودي بحياة 9 أشخاص ويثير الهلع في مقاطعة بالـم بيتش</news:title>
+    </news:news>
+  </url>
+</urlset>

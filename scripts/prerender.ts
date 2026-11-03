@@ -373,7 +373,9 @@ export async function prerenderPrerenderedRoutes() {
 
   // Pre-populate readable initial HTML inside <div id="root"> for the homepage
   // Contains crawlable links for search engine crawlers before JS runs
-  const latestArticlesForHome = Array.from(articleMap.values()).slice(0, 20);
+  const allArticlesList = Array.from(articleMap.values());
+  const latestArticlesForHome = allArticlesList.slice(0, 20);
+  const breakingArticles = allArticlesList.filter((a) => a.isBreaking || a.isLead).slice(0, 3);
 
   const homeSsrContent = `
     <div id="root">
@@ -385,6 +387,15 @@ export async function prerenderPrerenderedRoutes() {
           </nav>
         </div>
       </header>
+      ${breakingArticles.length > 0 ? `
+      <div class="bg-[#0f172a] text-slate-100 border-b border-slate-800 text-xs py-2 px-4" dir="rtl">
+        <div class="max-w-7xl mx-auto flex items-center gap-3 overflow-hidden">
+          <span class="bg-[#dc2626] text-white px-2.5 py-0.5 font-bold rounded-xs shrink-0">عاجل</span>
+          <div class="flex items-center gap-4 truncate">
+            ${breakingArticles.map((b) => `<a href="/article/${encodeURIComponent(b.id)}" class="hover:underline truncate text-slate-200 font-medium">${escapeHtml(b.title)}</a>`).join('<span class="text-slate-600">·</span>')}
+          </div>
+        </div>
+      </div>` : ''}
       <main class="max-w-7xl mx-auto px-4 py-8" dir="rtl">
         <h1 class="text-2xl sm:text-3xl font-black text-slate-900 mb-6">أحدث الأخبار والتقارير المنشورة</h1>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

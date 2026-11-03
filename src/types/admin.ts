@@ -23,6 +23,7 @@ export interface AdminArticle {
   isLead?: boolean;
   isSecondary?: boolean;
   isMostRead?: boolean;
+  isBreaking?: boolean;
   status: ArticleStatus;
   viewsCount?: string;
   tags?: string[];

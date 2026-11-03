@@ -806,6 +806,16 @@ export const AdminArticlesView: React.FC<AdminArticlesViewProps> = ({
                   </label>
 
                   <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(editingArticle.isBreaking)}
+                      onChange={(e) => setEditingArticle({ ...editingArticle, isBreaking: e.target.checked })}
+                      className="rounded accent-red-500"
+                    />
+                    <span className="text-red-400 font-bold">تعيين كـ «خبر عاجل» (شريط العواجل)</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer">
                     <span className="text-xs font-semibold text-slate-300">حالة النشر:</span>
                     <select
                       value={editingArticle.status || 'published'}

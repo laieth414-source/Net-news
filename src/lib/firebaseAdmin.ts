@@ -126,6 +126,7 @@ export async function saveArticleAdmin(article: Partial<AdminArticle>, isNew: bo
     isLead: Boolean(article.isLead),
     isSecondary: Boolean(article.isSecondary),
     isMostRead: Boolean(article.isMostRead),
+    isBreaking: Boolean(article.isBreaking),
     status: article.status || 'published',
     viewsCount: article.viewsCount || '0 قراءة',
     tags: Array.isArray(article.tags) ? article.tags : [],
@@ -135,6 +136,32 @@ export async function saveArticleAdmin(article: Partial<AdminArticle>, isNew: bo
   };
 
   await setDoc(docRef, payload, { merge: true });
+
+  // Automatically link to breaking news bar when marked as breaking
+  if (article.isBreaking) {
+    try {
+      const breakingId = `brk-${id}`;
+      const breakingRef = doc(db, 'breakingNews', breakingId);
+      await setDoc(
+        breakingRef,
+        {
+          id: breakingId,
+          text: payload.title,
+          time: 'عاجل',
+          category: payload.categoryName || 'عاجل',
+          articleId: id,
+          isActive: true,
+          order: 1,
+          updatedAt: serverTimestamp(),
+          createdAt: serverTimestamp()
+        },
+        { merge: true }
+      );
+    } catch (err) {
+      console.warn('Notice: Error syncing breaking news for article:', err);
+    }
+  }
+
   await logAdminAction(
     isNew ? 'إضافة مقال' : 'تعديل مقال',
     'المقالات والأخبار',

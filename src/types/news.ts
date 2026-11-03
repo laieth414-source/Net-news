@@ -41,6 +41,7 @@ export interface Article {
   isLead?: boolean;
   isSecondary?: boolean;
   isMostRead?: boolean;
+  isBreaking?: boolean;
   status?: 'published' | 'pending' | 'draft' | 'archived';
   rank?: number;
   viewsCount?: string;
